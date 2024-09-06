@@ -29,6 +29,7 @@ application = ProtocolTypeRouter({
     #         path('ws/game/<int:game_id>/', GameConsumer.as_asgi()),
     #     ]),
 })
+
 # application = ProtocolTypeRouter({
 #     "http": get_asgi_application(),  # Traite les requêtes HTTP
 #     "websocket": AuthMiddlewareStack(

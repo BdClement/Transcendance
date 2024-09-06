@@ -25,8 +25,9 @@ from game.views import PlayCreateAPIView, PlayStartAPIView
 # router.register('play/create', )
 urlpatterns = [
     path('admin/', admin.site.urls),
-	path('api/play/create', views.PlayCreateAPIView.as_view()),
+	path('api/play/create', views.PlayCreateAPIView.as_view(), name='create_play'),
 	path('api/play/start/<int:id>', views.PlayStartAPIView.as_view()),
 	# path('api-auth/', include('rest_framework.urls')), #activation de l'authentification DRF
 	re_path(r'^.*$', views.index, name='index'),
 ]
+

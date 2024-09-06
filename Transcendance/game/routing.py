@@ -1,8 +1,11 @@
 # # Transcendance/Transcendance/routing.py
 
-from django.urls import re_path
+from django.urls import re_path, path
 from .consumers import GameConsumer
 
+#path pour les URL simples pour les cas courants
+#re_path pour les path avec regex (expressions regulieres)
+
 websocket_urlpatterns = [
-    re_path(r'ws/game/$', GameConsumer.as_asgi()),
+	path('ws/game/<int:game_id>/',  GameConsumer.as_asgi()),
 ]

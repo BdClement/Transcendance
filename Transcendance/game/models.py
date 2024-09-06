@@ -19,5 +19,4 @@ class Play(models.Model):
 	player_connected= models.PositiveIntegerField(default=0)#Nombre de joueurs connectes a la partie
 	nb_players = models.IntegerField(choices=[(2, 'Deux joueurs'), (4, 'Quatre joueurs')], default=2)# Nombre de joueur = mode normal ou 2V2# Nombre de joueur = mode normal ou 2V2
 	remote = models.BooleanField(default=False)# Remote ou pas
-	# clients_connected = models.PositiveBigIntegerField(default=0)#Utile pour remote player
 

@@ -1,7 +1,16 @@
 import random
 import asyncio
+import django
+import os
 
 from channels.layers import get_channel_layer
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Transcendance.settings')
+django.setup()
+
+from .models import Play
+
+
 
 class PongGame:
     def __init__(self, game_id, game_group_name):
@@ -11,7 +20,8 @@ class PongGame:
         self.paddle_height = 100
         self.ball_radius = 10
         self.is_running = False
-        self.game_id = game_id # Pour acceder a la partie et compter les points et identifier la partie concernee ?
+        self.play = Play.objects.get(pk=game_id)
+        # self.game_id = game_id # Pour acceder a la partie et compter les points et identifier la partie concernee ?
         self.game_group_name = game_group_name
         self.channel_layer = get_channel_layer()
 
@@ -22,6 +32,12 @@ class PongGame:
         # Initialisation de la balle
         self.ball_x, self.ball_y = self.width // 2, self.height // 2
         self.ball_speed_x, self.ball_speed_y = 5 * random.choice((1, -1)), 5 * random.choice((1, -1))
+
+        # if self.play.nb_players == 4:
+            # Ajouter initialisation pour player 3 et $
+
+        # Cas Remote a ajouter
+
 
     async def start_game(self):
         if not self.is_running:
@@ -35,11 +51,6 @@ class PongGame:
             self.is_running = False
             self.game_loop_task.cancel()# Gestion du score / fin de partie Avant?
             await self.game_loop_task
-
-
-    # A modifier ???
-    async def update_player1_position(self, y):
-        self.player1_y = y
 
     async def update_game_state(self):
         # Update ball position
@@ -60,7 +71,6 @@ class PongGame:
             self.ball_x, self.ball_y = self.width // 2, self.height // 2
             self.ball_speed_x *= random.choice((1, -1))
             self.ball_speed_y *= random.choice((1, -1))
-
         # Retourne les positions actuelles pour les envoyer via WebSocket
         return {
             'ball_x': self.ball_x,
@@ -69,13 +79,25 @@ class PongGame:
             'player2_y': self.player2_y
         }
 
+    # A modifier ???
+    async def update_player_position(self, y):
+        # self.player1_y = y
+        if y.get('player1') is not None:
+            self.player1_y = y['player1']
+        elif y.get('player2') is not None:
+            self.player2_y = y['player2']
+        elif y.get('player3') is not None:
+            self.player3_y = y['player3']
+        elif y.get('player4') is not None:
+            self.player4_y = y['player4']
+
     async def game_loop(self):
         while self.is_running:
-            game_state = self.update_game_state()
+            game_state = await self.update_game_state()
             await self.channel_layer.group_send(
                 self.game_group_name,
                 {
-                    'type': 'update_game'
+                    'type': 'update_game',
                     **game_state
                 }
             )

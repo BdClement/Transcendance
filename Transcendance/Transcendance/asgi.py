@@ -8,16 +8,18 @@ https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
 """
 
 import os
-
+import django
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.core.asgi import get_asgi_application
 from channels.auth import AuthMiddlewareStack #(authentification de qui utilise la socket)
 # En gros l'authentification permettra une personnalisation car acces a l'utiisateur connecte dans le Consumer
 from django.urls import path
-from game.consumers import GameConsumer
+# from game.consumers import GameConsumer
+# from game import routing.websocket_urlpatterns
 from game.routing import websocket_urlpatterns
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Transcendance.settings')
+# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Transcendance.settings')
+# django.setup()
 
 # application = get_asgi_application()
 application = ProtocolTypeRouter({

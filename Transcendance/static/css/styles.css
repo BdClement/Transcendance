@@ -1,2 +1,269 @@
-* { background: rgb(165, 153, 153) }
-/* Probleme de chargement du au cache : Desactiver le cache dans le navigateur */
+canvas {
+	background: black;
+    display: block;
+    border: 1px solid #ffffff;
+}
+
+.page-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 80px;
+    height: 100%;
+    background-color: #0D1E29; /* Couleur grise */
+    z-index: 1000; /* S'assure que la barre est toujours au-dessus des autres éléments */
+}
+
+/* #785E2C */
+
+.left-navbar {
+    justify-content: space-between;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.left-navbar li {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    background-color: transparent; /* Fond par défaut */
+    border-top: none; /* Pas de bordure en haut */
+    border-left: none; /* Pas de bordure à gauche */
+    border-right: none; /* Pas de bordure à droite */
+    border-bottom: 2px solid #785E2C; /* Ajoute une bordure seulement en bas */
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.main-sidebar-left {
+    padding: 20px;
+}
+
+._ {
+    display: flex;
+    flex-direction: column;
+}
+
+.icon-tournoi {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px; /* Taille du conteneur */
+    height: 40px; /* Taille du conteneur */
+}
+
+.icon-tournoi img {
+    width: 36px; /* Taille fixe de l'icône */
+    height: 36px; /* Taille fixe de l'icône */
+    object-fit: contain; /* S'assure que l'image reste proportionnée */
+    filter: none;
+    transition: filter 0.3s ease;
+}
+
+.left-navbar li:hover {
+    background-color: #0d2132; /* Change la couleur de fond à #192026 lors du survol */
+}
+
+.left-navbar li:hover .icon-tournoi img {
+   filter: brightness(0) invert(1); /* Changement de couleur de l'icône */
+}
+
+.icon-parametre {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px; /* Taille du conteneur */
+    height: 40px; /* Taille du conteneur */
+}
+
+.icon-parametre img {
+    width: 36px; /* Taille fixe de l'icône */
+    height: 36px; /* Taille fixe de l'icône */
+    object-fit: contain; /* S'assure que l'image reste proportionnée */
+    filter: none;
+    transition: filter 0.3s ease;
+}
+
+.left-navbar li:hover .icon-parametre img {
+    filter: brightness(0) invert(1); /* Changement de couleur de l'icône */
+ }
+
+li {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+    content: "";
+    display: block;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+/* Positionnement du sélecteur de langue en haut à droite */
+.language-selector {
+    position: absolute;
+    top: 20px; /* Ajustez selon votre besoin */
+    right: 20px; /* Ajustez selon votre besoin */
+    z-index: 1000; /* S'assurer que c'est au-dessus des autres éléments */
+}
+
+/* Style du menu déroulant */
+.language-selector select {
+    padding: 5px;
+    font-size: 1rem;
+    border: 2px solid #7f5f20;
+    background-color: #fff;
+    cursor: pointer;
+}
+
+.language-selector select:focus {
+    border-color: #256579;
+}
+
+
+form {
+    text-align: center;
+}
+
+button {
+    width: 5.39cm;
+    height: 3cm;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    cursor: pointer;
+    background-color: #fff; /* Couleur de fond */
+    border: 2px solid #7f5f20; /* Couleur de la bordure */
+    border-radius: 5px; /* Bordure arrondie */
+    position: relative; /* Pour positionner le texte */
+    overflow: hidden;
+    text-align: center;
+}
+
+button .gradient-text {
+    font-size: 0.9rem; /* Ajuste la taille du texte si nécessaire */
+    font-weight: bold; /* Gras pour plus d'impact */
+    background: linear-gradient(to bottom, #ad996d, #806b49); /* Dégradé de blanc à doré */
+    -webkit-background-clip: text; /* Nécessaire pour Chrome, Safari, etc. */
+    background-clip: text; /* Pour les autres navigateurs supportant cette propriété */
+    color: transparent; /* Rend la couleur du texte transparente pour afficher le fond */
+}
+
+button:hover {
+    background-color: #ddd; /* Couleur de fond au survol */
+}
+
+/* État sélectionné du bouton Play (si applicable) */
+button:focus {
+    background-color: #256579;
+    color: white;
+    border-color: #7f5f20;
+}
+
+/* Retirer la bordure du fieldset */
+fieldset {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: none; /* Supprime la bordure */
+}
+
+/* Conteneur pour chaque ligne de boutons */
+.row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+label {
+    margin-right: 5px;
+    margin-left: 5px;
+}
+
+input[type="radio"] {
+    display: none;
+}
+
+
+/* Style des boutons */
+label {
+    display: inline-block;
+    width: 2.5cm;
+    height: 1.5cm;
+    line-height: 1.5cm;
+    text-align: center;
+    background-color: #fff;
+    cursor: pointer;
+    position: relative;
+    border: 2px solid #7f5f20; /* Troisième bordure (la plus large) */
+    box-sizing: border-box; /* Inclut les bordures dans la taille totale */
+    overflow: hidden;
+}
+
+label::before,
+label::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    pointer-events: none; /* Empêche les pseudo-éléments d'interagir */
+}
+
+label::before {
+    border: 7px solid #1FA1C0; /* Deuxième bordure (moyenne) */
+    z-index: 1;
+}
+
+label::after {
+    border: 5px solid #02182d; /* Première bordure (la plus fine) */
+    z-index: 2;
+}
+
+label .gradient-text {
+    font-size: 0.8rem; /* Ajuste la taille du texte si nécessaire */
+    font-weight: bold; /* Gras pour plus d'impact */
+    background: linear-gradient(to bottom, #ad996d, #806b49); /* Dégradé de blanc à doré */
+    -webkit-background-clip: text; /* Nécessaire pour Chrome, Safari, etc. */
+    background-clip: text; /* Pour les autres navigateurs supportant cette propriété */
+    color: transparent; /* Rend la couleur du texte transparente pour afficher le fond */
+    z-index: 3; /* Place le texte au-dessus des pseudo-éléments */
+    position: relative;
+    top: -3px;
+}
+
+label:hover {
+    background-color: #ddd;
+}
+
+input[type="radio"]:checked + label {
+    background-color: #256579;
+    color: white;
+    border-color: #7f5f20;
+}
+/* Alignement central */
+body, html {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f4f4f4;
+}

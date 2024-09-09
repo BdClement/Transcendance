@@ -1,93 +1,244 @@
+// // Fonction pour obtenir l'URL actuelle sans le domaine
+// // function getCurrentPath() {
+// //     return window.location.pathname.substring(1); // Supprimer le '/' initial
+// // }
+
+// function getCurrentPath() {
+//     let path = window.location.pathname.substring(1); // Supprimer le '/' initial
+//     return path.endsWith('/') ? path.slice(0, -1) : path; // Enlever le '/' final si présent
+// }
+
+// // Fonction pour afficher le contenu basé sur l'URL
+// function displayContent() {
+//     const path = getCurrentPath();
+//     const appElement = document.getElementById('app');
+
+//     if (path === 'home') {
+//         appElement.innerHTML = `
+//         <h1>Welcome on Transcendance</h1>
+//         <button onclick="navigate(event, 'home/play')">Jouer</button>
+//         <button onclick="testWebSocket()">Test WebSocket</button>
+//     `;
+//     }else if (path === 'home/play'){
+//         appElement.innerHTML = `
+//         <h1>Let's Play!</h1>
+//         <p>This is the play page content.</p>
+//     `;
+//     } else {
+// 		appElement.innerHTML = '<p>Page not found</p>';
+// 		// appElement.innerHTML = path;
+//     }
+// }
+
+// // Fonction pour gérer la navigation
+// function navigate(event, path) {
+//     event.preventDefault(); // Empêche le rechargement de la page
+//     history.pushState({}, '', `/${path}`); // Met à jour l'URL sans recharger
+//     displayContent(); // Affiche le contenu correspondant à la nouvelle URL
+// }
+
+// // Gérer la navigation avec le bouton "Retour" du navigateur
+// window.addEventListener('popstate', displayContent);
+
+// // Exécuter la fonction displayContent lorsque le DOM est complètement chargé
+// document.addEventListener('DOMContentLoaded', displayContent);
+
+
 // Fonction pour obtenir l'URL actuelle sans le domaine
 // function getCurrentPath() {
 //     return window.location.pathname.substring(1); // Supprimer le '/' initial
 // }
 
-function getCurrentPath() {
-    let path = window.location.pathname.substring(1); // Supprimer le '/' initial
-    return path.endsWith('/') ? path.slice(0, -1) : path; // Enlever le '/' final si présent
-}
+// Fonction pour obtenir l'URL actuelle sans le domaine
+// function getCurrentPath() {
+//     return window.location.pathname.substring(1); // Supprimer le '/' initial
+// }
 
-// Fonction pour afficher le contenu basé sur l'URL
-function displayContent() {
-    const path = getCurrentPath();
-    const appElement = document.getElementById('app');
-
-    if (path === 'home') {
-        appElement.innerHTML = `
-        <h1>Welcome on Transcendance</h1>
-        <button onclick="navigate(event, 'home/play')">Jouer</button>
-        <button onclick="testWebSocket()">Test WebSocket</button>
-    `;
-    }else if (path === 'home/play'){
-        appElement.innerHTML = `
-        <h1>Let's Play!</h1>
-        <p>This is the play page content.</p>
-    `;
-    } else {
-		appElement.innerHTML = '<p>Page not found</p>';
-		// appElement.innerHTML = path;
+const translations = {
+    en: {
+        play: "Play",
+        local_1v1: "Local 1vs1",
+        local_2v2: "Local 2vs2",
+        remote_1v1: "Remote 1vs1",
+        remote_2v2: "Remote 2vs2",
+        language: "Language"
+    },
+    fr: {
+        play: "Jouer",
+        local_1v1: "Local 1c1",
+        local_2v2: "Local 2c2",
+        remote_1v1: "Distant 1c1",
+        remote_2v2: "Distant 2c2",
+        language: "Langue"
+    },
+    viet: {
+        play: "Chơi",
+        local_1v1: "ở gần 1t1",
+        local_2v2: "ở gần 2t2",
+        remote_1v1: "Khoảng 1t1",
+        remote_2v2: "Khoảng 2t2",
+        language: "Langue"
     }
+};
+
+// Fonction pour appliquer les traductions en fonction de la langue sélectionnée
+function applyTranslations(language) {
+    document.querySelector('button span').textContent = translations[language].play;
+    document.querySelector('label[for="local_1v1"] span').textContent = translations[language].local_1v1;
+    document.querySelector('label[for="local_2v2"] span').textContent = translations[language].local_2v2;
+    document.querySelector('label[for="remote_1v1"] span').textContent = translations[language].remote_1v1;
+    document.querySelector('label[for="remote_2v2"] span').textContent = translations[language].remote_2v2;
 }
 
-// Fonction pour gérer la navigation
-function navigate(event, path) {
-    event.preventDefault(); // Empêche le rechargement de la page
-    history.pushState({}, '', `/${path}`); // Met à jour l'URL sans recharger
-    displayContent(); // Affiche le contenu correspondant à la nouvelle URL
+// Fonction pour changer la langue
+function changeLanguage(language) {
+    applyTranslations(language);
+    localStorage.setItem('language', language); // Enregistrer la langue dans le localStorage
 }
 
-// Gérer la navigation avec le bouton "Retour" du navigateur
-window.addEventListener('popstate', displayContent);
+// Initialiser la langue lors du chargement de la page
+document.addEventListener('DOMContentLoaded', () => {
+    const savedLanguage = localStorage.getItem('language') || 'fr'; // Français par défaut
+    document.getElementById('language').value = savedLanguage;
+    applyTranslations(savedLanguage); // Appliquer la traduction
+});
 
-// Exécuter la fonction displayContent lorsque le DOM est complètement chargé
-document.addEventListener('DOMContentLoaded', displayContent);
+// Écouter les changements de sélection dans le menu déroulant
+document.getElementById('language').addEventListener('change', function() {
+    const selectedLanguage = this.value;
+    changeLanguage(selectedLanguage);
+});
 
+document.getElementById('playForm').addEventListener('submit', function(event) {
+    event.preventDefault();
 
-// Créer une connexion WebSocket
-let socket;
+    // Récupération de la valeur sélectionnée
+    const gameMode = document.querySelector('input[name="game_mode"]:checked').value;
 
-function createWebSocket() {
-    // socket = new WebSocket('ws/game/1://localhost:6379'); // Remplacez l'URL par celle de votre serveur WebSocket
-    socket = new WebSocket('ws://localhost:8000/ws/game/'); // Remplacez l'URL par celle de votre serveur WebSocket
+    // Initialisation des variables remote et nb_players en fonction de la sélection
+    let remote, nbPlayers;
 
-    socket.onopen = function() {
-        console.log('Connexion WebSocket ouverte');
-        // Connexion ouverte, vous pouvez maintenant envoyer des messages
-        socket.send('Hello from client!');
-        console.log('Message envoyé : Hello from client!');
-    };
-
-    // Gérer les messages reçus
-    socket.onmessage = function(event) {
-        console.log('Message reçu du serveur :', event.data);
-    };
-
-    // Gérer les erreurs
-    socket.onerror = function(error) {
-        console.error('Erreur WebSocket :', error);
-    };
-
-    // Gérer la fermeture de la connexion
-    socket.onclose = function() {
-        console.log('Connexion WebSocket fermée');
-    };
-
-    // console.log('Connexion WebSocket créée');
-}
-
-// Fonction pour tester le WebSocket en envoyant un message
-function testWebSocket() {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-        console.log('Création de la connexion WebSocket...');
-        createWebSocket();
+    switch (gameMode) {
+        case 'remote_1v1':
+            remote = true;
+            nbPlayers = 2;
+            break;
+        case 'remote_2v2':
+            remote = true;
+            nbPlayers = 4;
+            break;
+        case 'local_1v1':
+            remote = false;
+            nbPlayers = 2;
+            break;
+        case 'local_2v2':
+            remote = false;
+            nbPlayers = 4;
+            break;
     }
 
-    // Assurez-vous que la connexion est ouverte avant d'envoyer le message
-    // if (socket.readyState === WebSocket.OPEN) {
-    //     socket.send('Hello from client!');
-    //     console.log('Message envoyé : Hello from client!');
-    // } else {
-    //     console.log('Connexion WebSocket n\'est pas encore ouverte');
-    // }
-}
+    // test bonnes donnees envoyes
+    console.log('Mode:', gameMode);
+    console.log('Remote:', remote);
+    console.log('Nb Players:', nbPlayers);
+
+    // donnees à envoyer dans la requete
+    const data = {
+        remote: remote,
+        nb_players: nbPlayers
+    };
+
+    // Envoi de la requête POST
+    fetch(`api/play/create`, {  // mettre URL d'API
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        const gameId = result.id;
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const paddleWidth = 10, paddleHeight = 100, ballSize = 10;
+        let player1Y = canvas.height / 2 - paddleHeight / 2;
+        let player2Y = canvas.height / 2 - paddleHeight / 2;
+
+        let isWPressed = false;
+        let isSPressed = false;
+
+        const paddleSpeed = 10;  // Vitesse constante de la raquette
+
+        socket = new WebSocket(`ws://${window.location.host}/ws/game/${gameId}/`);
+
+        socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            console.log('Received data:', data);
+
+            const ballX = data.ball_x;
+            const ballY = data.ball_y;
+            player1Y = data.player1_y;
+            player2Y = data.player2_y;
+
+            draw(ballX, ballY);
+        };
+
+        socket.onclose = function(e) {
+            console.error('WebSocket closed unexpectedly');
+        };
+
+        function draw(ballX, ballY) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = 'white';
+
+            ctx.fillRect(20, player1Y, paddleWidth, paddleHeight);
+            ctx.fillRect(canvas.width - 20 - paddleWidth, player2Y, paddleWidth, paddleHeight);
+
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, ballSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function sendPaddlePosition() {
+            socket.send(JSON.stringify({ 'player1_y': player1Y }));
+        }
+
+        function updatePaddlePosition() {
+            if (isWPressed) {
+                player1Y = Math.max(player1Y - paddleSpeed, 0);
+                sendPaddlePosition();
+            } else if (isSPressed) {
+                player1Y = Math.min(player1Y + paddleSpeed, canvas.height - paddleHeight);
+                sendPaddlePosition();
+            }
+        }
+
+        function gameLoop() {
+            updatePaddlePosition();
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'w') {
+                isWPressed = true;
+            } else if (event.key === 's') {
+                isSPressed = true;
+            }
+        });
+
+        document.addEventListener('keyup', function(event) {
+            if (event.key === 'w') {
+                isWPressed = false;
+            } else if (event.key === 's') {
+                isSPressed = false;
+            }
+        });
+
+        gameLoop();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+});

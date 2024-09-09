@@ -1,22 +1,89 @@
+<!-- <!DOCTYPE html> -->
+<!-- <html lang="en"> -->
+<!-- <head> -->
+    <!-- <meta charset="UTF-8"> -->
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> (Responsive) -->
+    <!-- <title>Transcendance</title> -->
+    <!-- Balises méta supplémentaires pour le SEO ou les réseaux sociaux -->
+    <!-- <meta name="description" content="Transcendance in SPA. This description is used by engines -->
+	<!-- searches for displaying results and through social networks for previews when sharing links."> -->
+    <!-- <link rel="stylesheet" href="/static/css/styles.css"> -->
+<!-- </head> -->
+<!-- <body> -->
+    <!-- Optionnel : Un loader ou message de chargement -->
+    <!-- <div id="app"> -->
+        <!-- <p>Application loading...</p> S'affiche jusqu'à ce que le JS prenne le relais -->
+    <!-- </div> -->
+
+    <!-- <script src="/static/js/main.js"></script> -->
+    <!-- Le script main.js peut ensuite charger d'autres scripts ou stylesheets dynamiquement -->
+<!-- </body> -->
+<!-- </html> -->
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> (Responsive) -->
-    <title>Transcendance</title>
-    <!-- Balises méta supplémentaires pour le SEO ou les réseaux sociaux -->
-    <meta name="description" content="Transcendance in SPA. This description is used by engines
-	searches for displaying results and through social networks for previews when sharing links.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong Game</title>
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
-    <!-- Optionnel : Un loader ou message de chargement -->
-    <div id="app">
-        <p>Application loading...</p> <!-- S'affiche jusqu'à ce que le JS prenne le relais -->
-    </div>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div class="page-sidebar left">
+        <ul class="left-navbar">
+            <div class="_">
+                <li>
 
+                </li>
+                <li>
+
+                </li>
+                <li>
+                    <span class="icon-tournoi">
+                        <img src="podium.png" alt="Icone Tournoi">
+                    </span>
+                </li>
+                <li>
+                    <span class="icon-parametre">
+                        <img src="parametre.png" alt="Icone Option">
+                    </span>
+                </li>
+            </div>
+        </ul>
+        <div class="main-sidebar-left"></div>
+    </div>
+    <div class="language-selector">
+        <select id="language" name="language">
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="viet">Tiếng Việt</option>
+        </select>
+    </div>
+    <form id="playForm">
+        <fieldset>
+            <br>
+            <button type="submit"><span class="gradient-text">Play</span></button>
+
+            <div class="row">
+                <input type="radio" name="game_mode" id="local_1v1" value="local_1v1" checked>
+                <label for="local_1v1"><span class="gradient-text">Local 1vs1</span></label>
+
+                <input type="radio" name="game_mode" id="local_2v2" value="local_2v2">
+                <label for="local_2v2"><span class="gradient-text">Local 2vs2</span></label>
+            </div>
+
+            <div class="row">
+                <input type="radio" name="game_mode" id="remote_1v1" value="remote_1v1">
+                <label for="remote_1v1"><span class="gradient-text">Remote 1vs1</span></label>
+
+                <input type="radio" name="game_mode" id="remote_2v2" value="remote_2v2">
+                <label for="remote_2v2"><span class="gradient-text">Remote 2vs2</span></label>
+            </div>
+
+        </fieldset>
+    </form>
     <script src="/static/js/main.js"></script>
-    <!-- Le script main.js peut ensuite charger d'autres scripts ou stylesheets dynamiquement -->
 </body>
 </html>
 

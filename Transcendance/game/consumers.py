@@ -2,9 +2,10 @@ import json
 import asyncio
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from channels.generic.websocket import AsyncWebsocketConsumer
+from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async
-from .models import Play
 from .pong_game import PongGame
+from .models import Play
 
 #async pour creer une fonction asynchrone (une coroutine qui peut etre mis en attente et effectue au moment voulu sans bloquer)
 #await pour attendre qu'une coroutine ou fonction asynchrone finisse a l'interieur d'une focntion asynchrone
@@ -16,7 +17,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		self.game_id = self.scope['url_route']['kwargs']['game_id']#Attribu l'id de la partie au consumer
 		try:
 			self.play = await database_sync_to_async(Play.objects.get)(id=self.game_id)
-			if not await play_is_available():
+			if not await self.play_is_available():
 				raise ValidationError('Play has already started or finished')
 		except ObjectDoesNotExist:
 			await self.close(code=4001)# Code a documenter dans l'API 4001 = objet non trouve
@@ -34,13 +35,22 @@ class GameConsumer(AsyncWebsocketConsumer):
 		)
 
 		await self.accept()
-		await add_players_to_play()
+		await self.add_players_to_play()
 		# GESTION DE DECONNEXIONS CLIENTS
 		# Probleme pour remote : Si l'instance de PongGame est creee dans le Consumer, si ce Consumer se deconnecte pour n'importe quelle raison
 		# Le jeu serait detruit avec le consumer et affecterait alors les autres players. Solutions :
 			#- Creer un objet global intermediaire qui stockerait les objets PongGameet qu'on manipulerait depuis cet objet ??
-		if play_ready_to_start():
-			self.pong = PongGame(self.game_id, self.game_group_name)
+		if self.play_ready_to_start():
+			# await self.channel_layer.group_send(
+            #     self.game_group_name,
+            #     {
+            #         'type':'update_game',
+			# 		'test':	self.game_id
+            #     }
+            # )
+			# print('Play is ready')
+			self.pong = await sync_to_async(PongGame, thread_sensitive=True)(self.game_id, self.game_group_name)
+				# PongGame(self.game_id, self.game_group_name)Comprendre
 			await self.pong.start_game()
 
 	async def disconnect(self, close_code):
@@ -51,7 +61,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 			self.channel_name
 		)
 
-		await rm_players_from_play()
+		await self.rm_players_from_play()
 		if self.play.player.connected == 0:
 			self.pong.stop_game()
 			#remettre la partie avec tout les joueurs pour qu'elle ne soit plus jouable
@@ -64,7 +74,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		# message = text_data_json['message']
 		# print(f'Ce qui a ete recu sur le back par le front : {message}')
 
-		await self.pong.update_player1_position(text_data_json)# Fonction update a modifier ??
+		await self.pong.update_player_position(text_data_json)# Fonction update a modifier ??
 		#Check du message recu : Move player, Point marque ..
 		# player_id = message['player_id']
 		# direction = message['direction']
@@ -78,12 +88,12 @@ class GameConsumer(AsyncWebsocketConsumer):
 	# Methodes utilitaires
 	async def play_is_available(self):
 		if self.play.remote:
-			return self.play.clients_connected < self.play.nb_players
+			return self.play.player_connected < self.play.nb_players
 		else:
-			return self.play.clients_connected == 0
+			return self.play.player_connected == 0
 
 	async def add_players_to_play(self):
-		if self.play.remote:
+		if not self.play.remote:
 			self.play.player_connected += self.play.nb_players
 		else:
 			self.play.player_connected += 1

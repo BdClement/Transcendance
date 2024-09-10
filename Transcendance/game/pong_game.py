@@ -64,12 +64,14 @@ class PongGame:
 
 # A modifier avec calcul ici !
     async def update_player_position(self, player_number, y):
-        # if player_number in self.players_y:
-        #     if y == 'up':
-        #         self.players_y[player_number] += 10
-        #     elif y == 'down':
-        #         self.players_y[player_number] -= 10
-        self.players_y[player_number] = 250
+        if player_number in self.players_y:
+            if y == 'up' and self.players_y[player_number] != 0:
+                self.players_y[player_number] -= 10
+                print(f'{self.players_y[player_number]}')
+            elif y == 'down' and self.players_y[player_number] != 500:
+                self.players_y[player_number] += 10
+                print(f'{self.players_y[player_number]}')
+        # self.players_y[player_number] = 250
 
     async def update_game_state(self):
         # Update ball position
@@ -104,13 +106,13 @@ class PongGame:
         #Retourne l'ensemble des donnees de la partie
         data = {
             'ball': (self.ball_x, self.ball_y),
-            'player_1':(self.players_y[1], self.players_x[1],),
-            'player_2': (self.players_y[2], self.players_x[2]),
+            'player_1':(self.players_x[1], self.players_y[1],),
+            'player_2': (self.players_x[2], self.players_y[2]),
         }
 
-        # if self.play.nb_players == 4:
-        #     data['player_3'] = (self.players_y[3], self.players_x[3])
-        #     data['player_4'] = (self.players_y[4], self.players_x[4])
+        if self.play.nb_players == 4:
+            data['player_3'] = (self.players_x[3], self.players_y[3])
+            data['player_4'] = (self.players_x[4], self.players_y[4])
         # Retourne les positions actuelles pour les envoyer via WebSocket
         return data
 
@@ -128,8 +130,8 @@ class PongGame:
                 self.game_group_name,
                 {
                     'type': 'update_game',
-                    'Test': 'test'
-                    # **game_state
+                    **game_state
+                    # 'Test': 'test'
                 }
             )
             await asyncio.sleep(1 / 60)

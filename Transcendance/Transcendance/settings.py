@@ -140,13 +140,22 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             "hosts": [('127.0.0.1', 6379)],
+#         },
+#     },
+# }
+
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            'hosts': [('127.0.0.1', 6379)],
+            'capacity': 3000,  # Augmenter la capacité du canal
+            'expiry': 120,     # Messages expirent après 1 minute
         },
-		'capacity': 1500,  # Nombre maximum de messages pouvant être stockés dans le canal
-        'expiry': 3600,    # Temps en secondes avant que les messages expirent
     },
 }

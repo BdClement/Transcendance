@@ -172,17 +172,17 @@ document.getElementById('playForm').addEventListener('submit', function(event) {
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = 'white';
-        
+
             if (gameState.ball) {
                 ctx.beginPath();
                 ctx.arc(gameState.ball[0], gameState.ball[1], ballSize, 0, Math.PI * 2);
                 ctx.fill();
             }
-        
+
             for (let i = 1; i <= nbPlayers; i++) {
                 const player = gameState[`player_${i}`];
                 if (player) {
-                    ctx.fillRect(player[1], player[0], paddleWidth, paddleHeight);
+                    ctx.fillRect(player[0], player[1], paddleWidth, paddleHeight);
                 }
             }
         }

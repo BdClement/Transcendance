@@ -61,16 +61,16 @@ class GameConsumer(AsyncWebsocketConsumer):
 	async def receive(self, text_data):
 		# Recevoir un message du WebSocket et traiter les mouvements des joueurs
 		text_data_json = json.loads(text_data)
+		player = text_data_json['player']
 
-		# print(f'Mouvement recu = {text_data_json}')
-		# if 1 in text_data_json:
-		# 	await self.pong.update_player_position(1, text_data_json[1])
-		# elif 2 in text_data_json:
-		# 	await self.pong.update_player_position(2, text_data_json[2])
-		# elif 3 in text_data_json:
-		# 	await self.pong.update_player_position(3, text_data_json[3])
-		# elif 4 in text_data_json:
-		# 	await self.pong.update_player_position(4, text_data_json[4])
+		if  player == 1:
+			await self.pong.update_player_position(1, text_data_json['move'])
+		elif player == 2:
+			await self.pong.update_player_position(2, text_data_json['move'])
+		elif player == 3:
+			await self.pong.update_player_position(3, text_data_json['move'])
+		elif player == 4:
+			await self.pong.update_player_position(4, text_data_json['move'])
 
 	# Methode que chaque consumer connecte appelera individuellement via le channel_layer dans PongGame
 	async def update_game(self, event):

@@ -4,6 +4,7 @@ import django
 import os
 
 from channels.layers import get_channel_layer
+from channels.db import database_sync_to_async
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Transcendance.settings')
 django.setup()
@@ -45,8 +46,6 @@ class PongGame:
             4: (self.width // 4) * 3
         })
 
-
-
         # Initialisation de la balle
         self.ball_x, self.ball_y = self.width // 2, self.height // 2
         self.ball_speed_x, self.ball_speed_y = 5 * random.choice((1, -1)), 5 * random.choice((1, -1))
@@ -62,10 +61,43 @@ class PongGame:
             self.game_loop_task = asyncio.create_task(self.game_loop())
 
     async def stop_game(self):
+        print('Appel de STOP_GAME')
+        # Stockage de resultats si la partie est terminee
+        print(f'TEST de is_finished = {self.play.is_finished}')
+        if self.play.is_finished:
+            #Identification du winner et du loser (partie 1v1)
+            if self.team_scores[1] == 3:
+                #Listes d'objets contenant des Player
+                winners = [self.play.player1]
+                losers = [self.play.player2]
+            else:
+                winners = [self.play.player2]
+                losers = [self.play.player1]
+            #Ajout du winner et loser supplementaire en cas de mode multijoueur (2v2)
+            if self.play.nb_players == 4:
+                winners.append(self.play.player3 if self.team_scores[1] == 3 else self.play.player4)
+                losers.append(self.play.player4 if self.team_scores[1] == 3 else self.play.player3)
+            #Dictionnaire player concerne (cle): score du joueur (valeur)
+            scores = {
+                "player1": self.team_scores[1],#remplacer par winners[0].name
+                "player2": self.team_scores[2]
+            }
+            if self.play.nb_players == 4:
+                scores.update({
+                    "player3": self.team_scores[1],
+                    "player4": self.team_scores[2]
+                })
+            print(f'Affichage de scores pour TESTER = {scores}')
+            # fonction du model Play qui enregistrera dans la base de donnee les resultats
+            await self.play.end_game(winners, losers, scores)
+        print("Arret de la tache en arriere plan")
+        # Arret de la tache en arriere plan
         if self.is_running:
             self.is_running = False
-            self.game_loop_task.cancel()# Gestion du score / fin de partie Avant?
+            self.game_loop_task.cancel()
             await self.game_loop_task
+        print("TEST dans stop_game apres l'arret de la tach en arriere plan")
+
 
 # A modifier avec calcul ici !
     async def update_player_position(self, player_number, y):
@@ -113,12 +145,12 @@ class PongGame:
         if self.ball_x - self.ball_radius <= 0:
             # Point pour le joueur 2
             self.team_scores[2] += 1
-            self.reset_ball()
+            await self.reset_ball()
             # Incrémenter le score du joueur 2 ici
         elif self.ball_x + self.ball_radius >= self.width:
             # Point pour le joueur 1
             self.team_scores[1] += 1
-            self.reset_ball()
+            await self.reset_ball()
         # if self.team_scores[1] == 3 or self.team_scores[2] == 3:
         #     print("FIN DE PARTIE !")
         #     await self.stop_game()
@@ -138,7 +170,7 @@ class PongGame:
         # Retourne les positions actuelles pour les envoyer via WebSocket
         return data
 
-    def reset_ball(self):
+    async def reset_ball(self):
         # Réinitialiser la position de la balle au centre
         self.ball_x, self.ball_y = self.width // 2, self.height // 2
         # Donner une direction aléatoire à la balle
@@ -157,8 +189,14 @@ class PongGame:
             )
             await asyncio.sleep(1 / 60)
             if self.team_scores[1] == 3 or self.team_scores[2] == 3:
-                print("FIN DE PARTIE !")
+                print("Fin de partie detecte dans game_loop")
+                self.play.is_finished = True
+                print("Mise a True de is_finished")
+                await database_sync_to_async(self.play.save)()
+                print("Sauvegarde du model dans la DB")
                 await self.stop_game()
+                print("Appel de stop_game done ")
+                ## TEST de logique d'enregistrement du score en cours, A FINIR !
         #Enregistrement dans l'objet Play du score ?
 
 # A faire :

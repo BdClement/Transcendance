@@ -42,6 +42,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 			#- Creer un objet global intermediaire qui stockerait les objets PongGameet qu'on manipulerait depuis cet objet ??
 		if self.play_ready_to_start():
 			self.pong = await sync_to_async(PongGame, thread_sensitive=True)(self.game_id, self.game_group_name)
+			# self.pong = await PongGame(self.game_id, self.game_group_name)
 			await self.pong.start_game()
 
 	async def disconnect(self, close_code):

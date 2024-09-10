@@ -32,6 +32,7 @@ class PlayCreateAPIView(APIView):
 			return Response(serializer.data, status=status.HTTP_201_CREATED)
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# A conserver car peut-etre pour Remote_player je devrais cree un endpoint API permettant de start une partie ?
 # class PlayStartAPIView(APIView):
 # 	def post(self, request, id):
 # 		try :
@@ -43,3 +44,4 @@ class PlayCreateAPIView(APIView):
 # 			return Response({"status": "Game started successfully"}, status=status.HTTP_200_OK)
 # 		except Play.DoesNotExist:
 # 			return Response({"error": "Play not found"}, status=status.HTTP_404_NOT_FOUND)
+

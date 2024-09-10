@@ -61,7 +61,11 @@ const translations = {
         local_2v2: "Local 2v2",
         remote_1v1: "Remote 1v1",
         remote_2v2: "Remote 2v2",
-        language: "Language"
+        language: "Language",
+        player1Wins: "Player 1 Wins!",
+        player2Wins: "Player 2 Wins!",
+        team1Wins: "Team 1 Wins!",
+        team2Wins: "Team 2 Wins!"
     },
     fr: {
         play: "Jouer",
@@ -69,7 +73,11 @@ const translations = {
         local_2v2: "Local 2c2",
         remote_1v1: "Distant 1c1",
         remote_2v2: "Distant 2c2",
-        language: "Langue"
+        language: "Langue",
+        player1Wins: "Joueur 1 gagne !",
+        player2Wins: "Joueur 2 gagne !",
+        team1Wins: "L'équipe 1 gagne !",
+        team2Wins: "L'équipe 2 gagne !"
     },
     viet: {
         play: "Chơi",
@@ -77,33 +85,33 @@ const translations = {
         local_2v2: "ở gần 2t2",
         remote_1v1: "Khoảng 1t1",
         remote_2v2: "Khoảng 2t2",
-        language: "Langue"
+        language: "Ngôn ngữ",
+        player1Wins: "Người chơi 1 thắng!",
+        player2Wins: "Người chơi 2 thắng!",
+        team1Wins: "Đội 1 thắng!",
+        team2Wins: "Đội 2 thắng!"
     }
 };
 
-// Fonction pour appliquer les traductions en fonction de la langue sélectionnée
 function applyTranslations(language) {
-    document.querySelector('button span').textContent = translations[language].play;
-    document.querySelector('label[for="local_1v1"] span').textContent = translations[language].local_1v1;
-    document.querySelector('label[for="local_2v2"] span').textContent = translations[language].local_2v2;
-    document.querySelector('label[for="remote_1v1"] span').textContent = translations[language].remote_1v1;
-    document.querySelector('label[for="remote_2v2"] span').textContent = translations[language].remote_2v2;
+    document.querySelector('button .gradient-text').textContent = translations[language].play;
+    document.querySelector('label[for="local_1v1"] .gradient-text').textContent = translations[language].local_1v1;
+    document.querySelector('label[for="local_2v2"] .gradient-text').textContent = translations[language].local_2v2;
+    document.querySelector('label[for="remote_1v1"] .gradient-text').textContent = translations[language].remote_1v1;
+    document.querySelector('label[for="remote_2v2"] .gradient-text').textContent = translations[language].remote_2v2;
 }
 
-// Fonction pour changer la langue
 function changeLanguage(language) {
     applyTranslations(language);
-    localStorage.setItem('language', language); // Enregistrer la langue dans le localStorage
+    localStorage.setItem('language', language);
 }
 
-// Initialiser la langue lors du chargement de la page
 document.addEventListener('DOMContentLoaded', () => {
-    const savedLanguage = localStorage.getItem('language') || 'fr'; // Français par défaut
+    const savedLanguage = localStorage.getItem('language') || 'fr';
     document.getElementById('language').value = savedLanguage;
-    applyTranslations(savedLanguage); // Appliquer la traduction
+    applyTranslations(savedLanguage);
 });
 
-// Écouter les changements de sélection dans le menu déroulant
 document.getElementById('language').addEventListener('change', function() {
     const selectedLanguage = this.value;
     changeLanguage(selectedLanguage);
@@ -153,9 +161,9 @@ document.getElementById('playForm').addEventListener('submit', function(event) {
         const ctx = canvas.getContext('2d');
         const paddleWidth = 10, paddleHeight = 100, ballSize = 10;
 
-        // let player1Y, player2Y, ballX, ballY;
         let gameState = {};
         let keyState = { w: false, s: false, ArrowUp: false, ArrowDown: false, t: false, g: false, i: false, k: false };
+        let gameLoopInterval;
 
         socket = new WebSocket(`ws://${window.location.host}/ws/game/${gameId}/`);
 
@@ -167,6 +175,7 @@ document.getElementById('playForm').addEventListener('submit', function(event) {
 
         socket.onclose = function(e) {
             console.error('WebSocket closed unexpectedly');
+            clearInterval(gameLoopInterval);
         };
 
         function draw() {
@@ -185,6 +194,40 @@ document.getElementById('playForm').addEventListener('submit', function(event) {
                     ctx.fillRect(player[0], player[1], paddleWidth, paddleHeight);
                 }
             }
+
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${gameState.score_team_1} - ${gameState.score_team_2}`, canvas.width / 2, 50);
+
+            if (gameState.score_team_1 === 3 || gameState.score_team_2 === 3) {
+                endGame(gameState.score_team_1 > gameState.score_team_2 ? 1 : 2);
+            }
+        }
+
+        function endGame(winningTeam) {
+            const language = localStorage.getItem('language') || 'fr';
+            let message;
+            if (nbPlayers === 2) {
+                message = winningTeam === 1 ? translations[language].player1Wins : translations[language].player2Wins;
+            } else {
+                message = winningTeam === 1 ? translations[language].team1Wins : translations[language].team2Wins;
+            }
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = 'white';
+            ctx.font = '36px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+
+            clearInterval(gameLoopInterval);
+
+            setTimeout(() => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'black';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }, 2000);
         }
 
         function sendPaddleMovement(player, direction) {
@@ -214,8 +257,7 @@ document.getElementById('playForm').addEventListener('submit', function(event) {
             if (keyState.ArrowDown) sendPaddleMovement(2, 'down');
         }
 
-        // Update paddle positions 60 times per second for smooth movement
-        setInterval(updatePaddlePositions, 1000 / 60);
+        gameLoopInterval = setInterval(updatePaddlePositions, 1000 / 60);
     })
     .catch(error => {
         console.error('Error:', error);

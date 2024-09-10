@@ -155,7 +155,7 @@ document.getElementById('playForm').addEventListener('submit', function(event) {
 
         // let player1Y, player2Y, ballX, ballY;
         let gameState = {};
-        let keyState = { w: false, s: false, ArrowUp: false, ArrowDown: false };
+        let keyState = { w: false, s: false, ArrowUp: false, ArrowDown: false, t: false, g: false, i: false, k: false };
 
         socket = new WebSocket(`ws://${window.location.host}/ws/game/${gameId}/`);
 
@@ -206,6 +206,10 @@ document.getElementById('playForm').addEventListener('submit', function(event) {
         function updatePaddlePositions() {
             if (keyState.w) sendPaddleMovement(1, 'up');
             if (keyState.s) sendPaddleMovement(1, 'down');
+            if (keyState.t) sendPaddleMovement(3, 'up');
+            if (keyState.g) sendPaddleMovement(3, 'down');
+            if (keyState.i) sendPaddleMovement(4, 'up');
+            if (keyState.k) sendPaddleMovement(4, 'down');
             if (keyState.ArrowUp) sendPaddleMovement(2, 'up');
             if (keyState.ArrowDown) sendPaddleMovement(2, 'down');
         }

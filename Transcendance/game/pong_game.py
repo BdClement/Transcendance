@@ -41,6 +41,8 @@ class PongGame:
             3: self.width // 4,
             4: (self.width // 4) * 3
         })
+        #initialisation des scores
+
 
         # Initialisation de la balle
         self.ball_x, self.ball_y = self.width // 2, self.height // 2
@@ -67,11 +69,8 @@ class PongGame:
         if player_number in self.players_y:
             if y == 'up' and self.players_y[player_number] != 0:
                 self.players_y[player_number] -= 10
-                print(f'{self.players_y[player_number]}')
-            elif y == 'down' and self.players_y[player_number] != 500:
+            elif y == 'down' and self.players_y[player_number] != self.height - self.paddle_height:
                 self.players_y[player_number] += 10
-                print(f'{self.players_y[player_number]}')
-        # self.players_y[player_number] = 250
 
     async def update_game_state(self):
         # Update ball position
@@ -93,6 +92,19 @@ class PongGame:
             self.players_y[2] < self.ball_y < self.players_y[2] + self.paddle_height):
             self.ball_speed_x = -abs(self.ball_speed_x)  # Rebond vers la gauche
             self.ball_x = self.width - self.paddle_width - self.ball_radius  # Évite que la balle ne reste à la raquette
+
+        if self.play.nb_players == 4:
+            if (self.ball_x - self.ball_radius <= self.players_x[3] + self.paddle_width and
+                self.players_x[3] <= self.ball_x and
+                self.players_y[3] < self.ball_y < self.players_y[3] + self.paddle_height):
+                self.ball_speed_x = abs(self.ball_speed_x)  # Rebond vers la droite
+                self.ball_x = self.players_x[3] + self.paddle_width + self.ball_radius  # Repositionner la balle
+
+            if (self.ball_x + self.ball_radius >= self.players_x[4] and
+                self.players_x[4] >= self.ball_x and
+                self.players_y[4] < self.ball_y < self.players_y[4] + self.paddle_height):
+                self.ball_speed_x = -abs(self.ball_speed_x)  # Rebond vers la gauche
+                self.ball_x = self.players_x[4] - self.ball_radius
 
         # Gestion des points et réinitialisation de la balle
         if self.ball_x - self.ball_radius <= 0:

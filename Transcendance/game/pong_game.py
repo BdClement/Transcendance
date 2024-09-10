@@ -30,6 +30,9 @@ class PongGame:
         # Initialisation des positions X
         self.players_x =    {1: 0,
                             2: self.width - 10}
+        #initialisation des scores
+        self.team_scores = { 1: 0,
+                            2: 0}
         #Initialisation des positions des players 3 et 4 si necessaire
         if self.play.nb_players == 4:
             #Update pour mettre a  jour le dictionnaire (simialire a dictionnaire['nouvelle_Cle] = Valeur)
@@ -41,7 +44,7 @@ class PongGame:
             3: self.width // 4,
             4: (self.width // 4) * 3
         })
-        #initialisation des scores
+
 
 
         # Initialisation de la balle
@@ -109,17 +112,24 @@ class PongGame:
         # Gestion des points et réinitialisation de la balle
         if self.ball_x - self.ball_radius <= 0:
             # Point pour le joueur 2
+            self.team_scores[2] += 1
             self.reset_ball()
             # Incrémenter le score du joueur 2 ici
         elif self.ball_x + self.ball_radius >= self.width:
             # Point pour le joueur 1
+            self.team_scores[1] += 1
             self.reset_ball()
+        # if self.team_scores[1] == 3 or self.team_scores[2] == 3:
+        #     print("FIN DE PARTIE !")
+        #     await self.stop_game()
 
         #Retourne l'ensemble des donnees de la partie
         data = {
             'ball': (self.ball_x, self.ball_y),
             'player_1':(self.players_x[1], self.players_y[1],),
             'player_2': (self.players_x[2], self.players_y[2]),
+            'score_team_1' :self.team_scores[1],
+            'score_team_2' :self.team_scores[2]
         }
 
         if self.play.nb_players == 4:
@@ -143,11 +153,13 @@ class PongGame:
                 {
                     'type': 'update_game',
                     **game_state
-                    # 'Test': 'test'
                 }
             )
             await asyncio.sleep(1 / 60)
-        # Gestion du score en fin de partie ?
+            if self.team_scores[1] == 3 or self.team_scores[2] == 3:
+                print("FIN DE PARTIE !")
+                await self.stop_game()
+        #Enregistrement dans l'objet Play du score ?
 
 # A faire :
 # Comprendre les formats de reception de message d'un client pour ajuster update_player1_position

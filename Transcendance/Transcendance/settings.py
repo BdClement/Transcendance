@@ -146,5 +146,7 @@ CHANNEL_LAYERS = {
         'CONFIG': {
             "hosts": [('127.0.0.1', 6379)],
         },
+		'capacity': 1500,  # Nombre maximum de messages pouvant être stockés dans le canal
+        'expiry': 3600,    # Temps en secondes avant que les messages expirent
     },
 }

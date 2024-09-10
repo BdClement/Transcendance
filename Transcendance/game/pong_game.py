@@ -21,20 +21,30 @@ class PongGame:
         self.ball_radius = 10
         self.is_running = False
         self.play = Play.objects.get(pk=game_id)
-        # self.game_id = game_id # Pour acceder a la partie et compter les points et identifier la partie concernee ?
         self.game_group_name = game_group_name
         self.channel_layer = get_channel_layer()
 
-        # Initialisation des positions
-        self.player1_y = self.height // 2 - self.paddle_height // 2
-        self.player2_y = self.height // 2 - self.paddle_height // 2
+        # Initialisation des positions Y
+        self.players_y = {1: self.height // 2 - self.paddle_height // 2,
+                          2: self.height // 2 - self.paddle_height // 2}
+        # Initialisation des positions X
+        self.players_x =    {1: 0,
+                            2: self.width - 10}
+        #Initialisation des positions des players 3 et 4 si necessaire
+        if self.play.nb_players == 4:
+            #Update pour mettre a  jour le dictionnaire (simialire a dictionnaire['nouvelle_Cle] = Valeur)
+            self.players_y.update({
+            3: self.players_y[1],
+            4: self.players_y[1]
+        })
+            self.players_x.update({
+            3: self.width // 4,
+            4: (self.width // 4) * 3
+        })
 
         # Initialisation de la balle
         self.ball_x, self.ball_y = self.width // 2, self.height // 2
         self.ball_speed_x, self.ball_speed_y = 5 * random.choice((1, -1)), 5 * random.choice((1, -1))
-
-        # if self.play.nb_players == 4:
-            # Ajouter initialisation pour player 3 et $
 
         # Cas Remote a ajouter
 
@@ -52,44 +62,64 @@ class PongGame:
             self.game_loop_task.cancel()# Gestion du score / fin de partie Avant?
             await self.game_loop_task
 
+# A modifier avec calcul ici !
+    async def update_player_position(self, player_number, y):
+        # if player_number in self.players_y:
+        #     if y == 'up':
+        #         self.players_y[player_number] += 10
+        #     elif y == 'down':
+        #         self.players_y[player_number] -= 10
+        self.players_y[player_number] = 250
+
     async def update_game_state(self):
         # Update ball position
         self.ball_x += self.ball_speed_x
         self.ball_y += self.ball_speed_y
 
-        # Rebond sur les murs du haut et du bas
+        # Gestion des collisions avec les murs du haut et du bas
         if self.ball_y - self.ball_radius <= 0 or self.ball_y + self.ball_radius >= self.height:
             self.ball_speed_y *= -1
+            # Ajuster la position de la balle pour éviter qu'elle ne reste au mur
+            self.ball_y = max(self.ball_radius, min(self.height - self.ball_radius, self.ball_y))
 
-        # Rebond sur les raquettes
-        if (self.ball_x - self.ball_radius <= self.paddle_width and self.player1_y < self.ball_y < self.player1_y + self.paddle_height) or \
-        (self.ball_x + self.ball_radius >= self.width - self.paddle_width and self.player2_y < self.ball_y < self.player2_y + self.paddle_height):
-            self.ball_speed_x *= -1
+        # Gestion des collisions avec les raquettes
+        if (self.ball_x - self.ball_radius <= self.paddle_width and
+            self.players_y[1] < self.ball_y < self.players_y[1] + self.paddle_height):
+            self.ball_speed_x = abs(self.ball_speed_x)  # Rebond vers la droite
+            self.ball_x = self.paddle_width + self.ball_radius  # Évite que la balle ne reste à la raquette
+        elif (self.ball_x + self.ball_radius >= self.width - self.paddle_width and
+            self.players_y[2] < self.ball_y < self.players_y[2] + self.paddle_height):
+            self.ball_speed_x = -abs(self.ball_speed_x)  # Rebond vers la gauche
+            self.ball_x = self.width - self.paddle_width - self.ball_radius  # Évite que la balle ne reste à la raquette
 
-        # Rebond sur les murs de gauche et de droite
-        if self.ball_x - self.ball_radius <= 0 or self.ball_x + self.ball_radius >= self.width:
-            self.ball_x, self.ball_y = self.width // 2, self.height // 2
-            self.ball_speed_x *= random.choice((1, -1))
-            self.ball_speed_y *= random.choice((1, -1))
-        # Retourne les positions actuelles pour les envoyer via WebSocket
-        return {
-            'ball_x': self.ball_x,
-            'ball_y': self.ball_y,
-            'player1_y': self.player1_y,
-            'player2_y': self.player2_y
+        # Gestion des points et réinitialisation de la balle
+        if self.ball_x - self.ball_radius <= 0:
+            # Point pour le joueur 2
+            self.reset_ball()
+            # Incrémenter le score du joueur 2 ici
+        elif self.ball_x + self.ball_radius >= self.width:
+            # Point pour le joueur 1
+            self.reset_ball()
+
+        #Retourne l'ensemble des donnees de la partie
+        data = {
+            'ball': (self.ball_x, self.ball_y),
+            'player_1':(self.players_y[1], self.players_x[1],),
+            'player_2': (self.players_y[2], self.players_x[2]),
         }
 
-    # A modifier ???
-    async def update_player_position(self, y):
-        # self.player1_y = y
-        if y.get('player1') is not None:
-            self.player1_y = y['player1']
-        elif y.get('player2') is not None:
-            self.player2_y = y['player2']
-        elif y.get('player3') is not None:
-            self.player3_y = y['player3']
-        elif y.get('player4') is not None:
-            self.player4_y = y['player4']
+        # if self.play.nb_players == 4:
+        #     data['player_3'] = (self.players_y[3], self.players_x[3])
+        #     data['player_4'] = (self.players_y[4], self.players_x[4])
+        # Retourne les positions actuelles pour les envoyer via WebSocket
+        return data
+
+    def reset_ball(self):
+        # Réinitialiser la position de la balle au centre
+        self.ball_x, self.ball_y = self.width // 2, self.height // 2
+        # Donner une direction aléatoire à la balle
+        self.ball_speed_x = 5 * random.choice((1, -1))
+        self.ball_speed_y = 5 * random.choice((1, -1))
 
     async def game_loop(self):
         while self.is_running:
@@ -98,10 +128,11 @@ class PongGame:
                 self.game_group_name,
                 {
                     'type': 'update_game',
-                    **game_state
+                    'Test': 'test'
+                    # **game_state
                 }
             )
-            await asyncio.sleep(1 / 30)
+            await asyncio.sleep(1 / 60)
         # Gestion du score en fin de partie ?
 
 # A faire :

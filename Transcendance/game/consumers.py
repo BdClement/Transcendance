@@ -41,16 +41,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		# Le jeu serait detruit avec le consumer et affecterait alors les autres players. Solutions :
 			#- Creer un objet global intermediaire qui stockerait les objets PongGameet qu'on manipulerait depuis cet objet ??
 		if self.play_ready_to_start():
-			# await self.channel_layer.group_send(
-            #     self.game_group_name,
-            #     {
-            #         'type':'update_game',
-			# 		'test':	self.game_id
-            #     }
-            # )
-			# print('Play is ready')
 			self.pong = await sync_to_async(PongGame, thread_sensitive=True)(self.game_id, self.game_group_name)
-				# PongGame(self.game_id, self.game_group_name)Comprendre
 			await self.pong.start_game()
 
 	async def disconnect(self, close_code):
@@ -62,7 +53,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		)
 
 		await self.rm_players_from_play()
-		if self.play.player.connected == 0:
+		if self.play.player_connected == 0:
 			self.pong.stop_game()
 			#remettre la partie avec tout les joueurs pour qu'elle ne soit plus jouable
 			#ca depend des circonstance gestion des deconnexion inconnu ??
@@ -70,16 +61,16 @@ class GameConsumer(AsyncWebsocketConsumer):
 	async def receive(self, text_data):
 		# Recevoir un message du WebSocket et traiter les mouvements des joueurs
 		text_data_json = json.loads(text_data)
-		#Test
-		# message = text_data_json['message']
-		# print(f'Ce qui a ete recu sur le back par le front : {message}')
 
-		await self.pong.update_player_position(text_data_json)# Fonction update a modifier ??
-		#Check du message recu : Move player, Point marque ..
-		# player_id = message['player_id']
-		# direction = message['direction']
-		# self.game_logic.process_player_move(player_id, direction)
-		#Ou point_scored()
+		# print(f'Mouvement recu = {text_data_json}')
+		# if 1 in text_data_json:
+		# 	await self.pong.update_player_position(1, text_data_json[1])
+		# elif 2 in text_data_json:
+		# 	await self.pong.update_player_position(2, text_data_json[2])
+		# elif 3 in text_data_json:
+		# 	await self.pong.update_player_position(3, text_data_json[3])
+		# elif 4 in text_data_json:
+		# 	await self.pong.update_player_position(4, text_data_json[4])
 
 	# Methode que chaque consumer connecte appelera individuellement via le channel_layer dans PongGame
 	async def update_game(self, event):

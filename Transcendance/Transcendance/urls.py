@@ -18,14 +18,15 @@ from django.contrib import admin
 from django.urls import path, re_path
 from rest_framework import routers
 from game import views
-from game.views import PlayCreateAPIView
+from game.views import PlayCreateAPIView, PlayDetailAPIView
 
 # router = routers.SimpleRouter()#A checker plus !
 
 # router.register('play/create', )
 urlpatterns = [
     path('admin/', admin.site.urls),
-	path('api/play/create', views.PlayCreateAPIView.as_view(), name='create_play'),
+	path('api/play/create', views.PlayCreateAPIView.as_view(), name='play_create'),
+	path('api/play/detail/<play_id>', views.PlayDetailAPIView.as_view(), name='play_detail'),
 	# path('api/play/start/<int:id>', views.PlayStartAPIView.as_view()),
 	# path('api-auth/', include('rest_framework.urls')), #activation de l'authentification DRF
 	re_path(r'^.*$', views.index, name='index'),

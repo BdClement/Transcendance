@@ -21,6 +21,5 @@ class TestPlayModel(TestCase):
 		self.assertEqual(play.player_connected, 0)
 		self.assertEqual(play.nb_players, 2)
 		self.assertEqual(play.remote, False)
-		self.assertEqual(play.clients_connected, 0)
 
 

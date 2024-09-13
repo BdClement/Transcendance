@@ -36,8 +36,10 @@ class Play(models.Model):
 		# 	loser.defeats += 1
 		# 	loser.save()
 		self.results = {
-			"winners": [winner.name for winner in winners],
-			"losers": [loser.name for loser in losers],
+			# "winners": [winner.name for winner in winners],
+			"winners": winners,# A modifier lorsque des objet Player seront attribuer a l'interieur de Play
+			# "losers": [loser.name for loser in losers],
+			"losers": losers,
 			"score": scores
 		}
 		await database_sync_to_async(self.save)()

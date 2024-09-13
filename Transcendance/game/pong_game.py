@@ -14,14 +14,14 @@ from .models import Play
 
 
 class PongGame:
-    def __init__(self, game_id, game_group_name):
+    def __init__(self, play_id, game_group_name):
         self.width = 800
         self.height = 600
         self.paddle_width = 10
         self.paddle_height = 100
         self.ball_radius = 10
         self.is_running = False
-        self.play = Play.objects.get(pk=game_id)
+        self.play = Play.objects.get(pk=play_id)
         self.game_group_name = game_group_name
         self.channel_layer = get_channel_layer()
 
@@ -36,7 +36,7 @@ class PongGame:
                             2: 0}
         #Initialisation des positions des players 3 et 4 si necessaire
         if self.play.nb_players == 4:
-            #Update pour mettre a  jour le dictionnaire (simialire a dictionnaire['nouvelle_Cle] = Valeur)
+            #fonction update() pour mettre a  jour le dictionnaire (simialire a dictionnaire['nouvelle_Cle] = Valeur)
             self.players_y.update({
             3: self.players_y[1],
             4: self.players_y[1]
@@ -53,19 +53,21 @@ class PongGame:
         # Cas Remote a ajouter
 
 
+    # Cette fonction lance une partie en creant une tache en arriere plan dans laquelle la boucle du jeu se lance
+    # Cela permet a la boucle de se lancer tout en liberant le consumer pour qu'il ne bloque pas au lancement du jeu
     async def start_game(self):
         if not self.is_running:
             self.is_running = True
-            # Cretion d'une tache en arreire plan pour que la fonction puisse terminer son execution alors meme que
-            # la boucle tourne en arriere plan et ce pour que le Consumer ne soit pas bloque
             self.game_loop_task = asyncio.create_task(self.game_loop())
 
+    # Situations pour que cette fonction soit appelee :
+        #-La partie est finie normalement donc enregisrement des resultats et la tache se termine toute seule
+        #-La partie se termine a cause de la deconnexion de tous les clients donc il faut stopper la tache en arriere plan
+        # et attendre que celle ci soit bien arretee. Pas d'enregistrement de resultats puisque arret de maniere inattendue
     async def stop_game(self):
-        print('Appel de STOP_GAME')
-        # Stockage de resultats si la partie est terminee
-        print(f'TEST de is_finished = {self.play.is_finished}')
+        # Stockage de resultats si la partie est terminee normalement
         if self.play.is_finished:
-            #Identification du winner et du loser (partie 1v1)
+            #Identification du winner et du losers
             if self.team_scores[1] == 3:
                 #Listes d'objets contenant des Player
                 winners = [self.play.player1]
@@ -87,19 +89,17 @@ class PongGame:
                     "player3": self.team_scores[1],
                     "player4": self.team_scores[2]
                 })
-            print(f'Affichage de scores pour TESTER = {scores}')
-            # fonction du model Play qui enregistrera dans la base de donnee les resultats
+            # fonction du model Play qui enregistre dans la base de donnee les resultats
             await self.play.end_game(winners, losers, scores)
-        print("Arret de la tache en arriere plan")
-        # Arret de la tache en arriere plan
-        if self.is_running:
-            self.is_running = False
-            self.game_loop_task.cancel()
-            await self.game_loop_task
-        print("TEST dans stop_game apres l'arret de la tach en arriere plan")
+        # Arret de la tache en arriere plan en cas d'arret inattendu
+        elif self.is_running:
+            try:
+                self.game_loop_task.cancel()
+                await self.game_loop_task
+            except asyncio.CancelledError:
+                pass
 
 
-# A modifier avec calcul ici !
     async def update_player_position(self, player_number, y):
         if player_number in self.players_y:
             if y == 'up' and self.players_y[player_number] != 0:
@@ -141,21 +141,15 @@ class PongGame:
                 self.ball_speed_x = -abs(self.ball_speed_x)  # Rebond vers la gauche
                 self.ball_x = self.players_x[4] - self.ball_radius
 
-        # Gestion des points et réinitialisation de la balle
+        # Comptage des points et réinitialisation de la balle
         if self.ball_x - self.ball_radius <= 0:
-            # Point pour le joueur 2
             self.team_scores[2] += 1
             await self.reset_ball()
-            # Incrémenter le score du joueur 2 ici
         elif self.ball_x + self.ball_radius >= self.width:
-            # Point pour le joueur 1
             self.team_scores[1] += 1
             await self.reset_ball()
-        # if self.team_scores[1] == 3 or self.team_scores[2] == 3:
-        #     print("FIN DE PARTIE !")
-        #     await self.stop_game()
 
-        #Retourne l'ensemble des donnees de la partie
+        #Retourne l'ensemble des positions de la partie
         data = {
             'ball': (self.ball_x, self.ball_y),
             'player_1':(self.players_x[1], self.players_y[1],),
@@ -163,11 +157,9 @@ class PongGame:
             'score_team_1' :self.team_scores[1],
             'score_team_2' :self.team_scores[2]
         }
-
         if self.play.nb_players == 4:
             data['player_3'] = (self.players_x[3], self.players_y[3])
             data['player_4'] = (self.players_x[4], self.players_y[4])
-        # Retourne les positions actuelles pour les envoyer via WebSocket
         return data
 
     async def reset_ball(self):
@@ -189,20 +181,18 @@ class PongGame:
             )
             await asyncio.sleep(1 / 60)
             if self.team_scores[1] == 3 or self.team_scores[2] == 3:
-                print("Fin de partie detecte dans game_loop")
                 self.play.is_finished = True
-                print("Mise a True de is_finished")
+                self.is_running = False
                 await database_sync_to_async(self.play.save)()
-                print("Sauvegarde du model dans la DB")
+                #Envoi d'un message pour signifier la fin de partie
+                await self.channel_layer.group_send(
+                    self.game_group_name,
+                    {
+                        'type': 'update_game',
+                        'message': 'end_game'
+                    }
+                )
                 await self.stop_game()
-                print("Appel de stop_game done ")
-                ## TEST de logique d'enregistrement du score en cours, A FINIR !
-        #Enregistrement dans l'objet Play du score ?
-
-# A faire :
-# Comprendre les formats de reception de message d'un client pour ajuster update_player1_position
-# Mettre condition de fin a game_loop + Gestion du score en fin de partie ?
-
 
 
 # PONG GAME DE JULIEN

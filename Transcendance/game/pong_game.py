@@ -98,6 +98,7 @@ class PongGame:
                 await self.game_loop_task
             except asyncio.CancelledError:
                 pass
+        # Detruire le Consumer ici quoiqu'il arrive
 
 
     async def update_player_position(self, player_number, y):

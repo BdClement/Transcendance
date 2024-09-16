@@ -3,7 +3,7 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, viewsets
 
 from game.models import Play
 from game.serializer import PlayCreateSerializer, PlayDetailSerializer
@@ -50,7 +50,14 @@ class PlayDetailAPIView(APIView):
 		serializer = PlayDetailSerializer(play)
 		return Response(serializer.data, status=status.HTTP_200_OK)
 
-
+#Pour la creation et la lecture des donnees d'une partie, j'ai opte pour une separation des taches avec un serializer et une vue pour chaque tache
+#Ce choix est viable si peu d'actions sont exposees, et permet de garder un controle total en limitant l'exposition d'actions non desirees
+#Pour les Tournois, j'opte pour un viewSet avec actions limites ce qui permet de centraliser la logique et reduire la taille du code
+class TournamentViewSet(viewsets.ModelViewSet):
+	def post(self, request):
+		#Pre validation pour eviter des operations plus couteuses si les fields requis ne sont pas present
+		if 'nb_players' not in request.data:# + le field alias_name present autant de fois que de joueurs
+			raise ValidationError('nb_players is required to create a tournament')
 
 # A conserver car peut-etre pour Remote_player je devrais cree un endpoint API permettant de start une partie ?
 # class PlayStartAPIView(APIView):

@@ -75,6 +75,10 @@ class PlayConsumer(AsyncWebsocketConsumer):
 	# Methode que chaque consumer connecte appelera individuellement via le channel_layer dans PongGame
 	async def update_game(self, event):
 		await self.send(text_data=json.dumps(event))
+		# Fermeture de la socket si c'est la fin de la partie
+		message = event.get('message')# Pour eviter qu'une exception soit levee si 'message' est absent
+		if message == 'end_game':
+			await self.close()
 
 	# Methodes utilitaires
 	async def play_is_available(self):

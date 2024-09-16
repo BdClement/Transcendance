@@ -43,3 +43,6 @@ class Play(models.Model):
 			"score": scores
 		}
 		await database_sync_to_async(self.save)()
+
+# class Tournament(models.Models):
+

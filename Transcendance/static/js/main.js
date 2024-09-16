@@ -1,121 +1,60 @@
-// // Fonction pour obtenir l'URL actuelle sans le domaine
-// // function getCurrentPath() {
-// //     return window.location.pathname.substring(1); // Supprimer le '/' initial
-// // }
+// document.addEventListener('DOMContentLoaded', function() {
+//     const canvas = document.getElementById('gameCanvas');
+//     const playForm = document.getElementById('playForm');
 
-// function getCurrentPath() {
-//     let path = window.location.pathname.substring(1); // Supprimer le '/' initial
-//     return path.endsWith('/') ? path.slice(0, -1) : path; // Enlever le '/' final si présent
-// }
+//     // S'assurer que le canvas est caché et que le formulaire est visible au chargement
+//     canvas.classList.add('hidden');
+//     canvas.classList.remove('visible');
+//     playForm.classList.add('visible');
+//     playForm.classList.remove('hidden');
+// });
 
-// // Fonction pour afficher le contenu basé sur l'URL
-// function displayContent() {
-//     const path = getCurrentPath();
-//     const appElement = document.getElementById('app');
+function updateUI(state) {
+    // Ici, vous mettrez la logique pour mettre à jour votre UI
+    // en fonction de l'état actuel
+    console.log('Updating UI with state:', state);
 
-//     if (path === 'home') {
-//         appElement.innerHTML = `
-//         <h1>Welcome on Transcendance</h1>
-//         <button onclick="navigate(event, 'home/play')">Jouer</button>
-//         <button onclick="testWebSocket()">Test WebSocket</button>
-//     `;
-//     }else if (path === 'home/play'){
-//         appElement.innerHTML = `
-//         <h1>Let's Play!</h1>
-//         <p>This is the play page content.</p>
-//     `;
-//     } else {
-// 		appElement.innerHTML = '<p>Page not found</p>';
-// 		// appElement.innerHTML = path;
-//     }
-// }
-
-// // Fonction pour gérer la navigation
-// function navigate(event, path) {
-//     event.preventDefault(); // Empêche le rechargement de la page
-//     history.pushState({}, '', `/${path}`); // Met à jour l'URL sans recharger
-//     displayContent(); // Affiche le contenu correspondant à la nouvelle URL
-// }
-
-// // Gérer la navigation avec le bouton "Retour" du navigateur
-// window.addEventListener('popstate', displayContent);
-
-// // Exécuter la fonction displayContent lorsque le DOM est complètement chargé
-// document.addEventListener('DOMContentLoaded', displayContent);
-
-
-// Fonction pour obtenir l'URL actuelle sans le domaine
-// function getCurrentPath() {
-//     return window.location.pathname.substring(1); // Supprimer le '/' initial
-// }
-
-// Fonction pour obtenir l'URL actuelle sans le domaine
-// function getCurrentPath() {
-//     return window.location.pathname.substring(1); // Supprimer le '/' initial
-// }
-
-const translations = {
-    en: {
-        play: "Play",
-        local_1v1: "Local 1v1",
-        local_2v2: "Local 2v2",
-        remote_1v1: "Remote 1v1",
-        remote_2v2: "Remote 2v2",
-        language: "Language",
-        player1Wins: "Player 1 Wins!",
-        player2Wins: "Player 2 Wins!",
-        team1Wins: "Team 1 Wins!",
-        team2Wins: "Team 2 Wins!"
-    },
-    fr: {
-        play: "Jouer",
-        local_1v1: "Local 1c1",
-        local_2v2: "Local 2c2",
-        remote_1v1: "Distant 1c1",
-        remote_2v2: "Distant 2c2",
-        language: "Langue",
-        player1Wins: "Joueur 1 gagne !",
-        player2Wins: "Joueur 2 gagne !",
-        team1Wins: "L'équipe 1 gagne !",
-        team2Wins: "L'équipe 2 gagne !"
-    },
-    viet: {
-        play: "Chơi",
-        local_1v1: "ở gần 1t1",
-        local_2v2: "ở gần 2t2",
-        remote_1v1: "Khoảng 1t1",
-        remote_2v2: "Khoảng 2t2",
-        language: "Ngôn ngữ",
-        player1Wins: "Người chơi 1 thắng!",
-        player2Wins: "Người chơi 2 thắng!",
-        team1Wins: "Đội 1 thắng!",
-        team2Wins: "Đội 2 thắng!"
+    // Exemple : mise à jour du contenu principal
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+        mainContent.innerHTML = `<h1>${state.title}</h1><p>${state.content}</p>`;
     }
-};
 
-function applyTranslations(language) {
-    document.querySelector('button .gradient-text').textContent = translations[language].play;
-    document.querySelector('label[for="local_1v1"] .gradient-text').textContent = translations[language].local_1v1;
-    document.querySelector('label[for="local_2v2"] .gradient-text').textContent = translations[language].local_2v2;
-    document.querySelector('label[for="remote_1v1"] .gradient-text').textContent = translations[language].remote_1v1;
-    document.querySelector('label[for="remote_2v2"] .gradient-text').textContent = translations[language].remote_2v2;
+    // Mise à jour du titre de la page
+    document.title = state.title;
 }
 
-function changeLanguage(language) {
-    applyTranslations(language);
-    localStorage.setItem('language', language);
+// Fonction pour naviguer vers une nouvelle "page"
+function navigateTo(title, url, content) {
+    const state = { title, content };
+    history.pushState(state, title, url);
+    updateUI(state);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const savedLanguage = localStorage.getItem('language') || 'fr';
-    document.getElementById('language').value = savedLanguage;
-    applyTranslations(savedLanguage);
+// Écouteur d'événements pour les clics sur les liens
+document.addEventListener('click', (e) => {
+    if (e.target.tagName === 'A') {
+        e.preventDefault();
+        const url = e.target.href;
+        const title = e.target.textContent;
+        const content = `Content for ${title}`; // Simulé, à remplacer par du vrai contenu
+        navigateTo(title, url, content);
+    }
 });
 
-document.getElementById('language').addEventListener('change', function() {
-    const selectedLanguage = this.value;
-    changeLanguage(selectedLanguage);
+// Écouteur pour l'événement popstate (navigation avant/arrière)
+window.addEventListener('popstate', (e) => {
+    if (e.state) {
+        updateUI(e.state);
+    } else {
+        // Gérer le cas où il n'y a pas d'état (par exemple, la page initiale)
+        updateUI({ title: 'Home', content: 'Welcome to the home page' });
+    }
 });
+
+// Initialisation de l'état initial
+history.replaceState({ title: 'Home', content: 'Welcome to the home page' }, 'Home', '/');
+updateUI({ title: 'Home', content: 'Welcome to the home page' });
 
 document.getElementById('playForm').addEventListener('submit', function(event) {
     event.preventDefault();
@@ -157,7 +96,19 @@ document.getElementById('playForm').addEventListener('submit', function(event) {
     .then(response => response.json())
     .then(result => {
         const gameId = result.id;
+        const newUrl = `/game/${gameId}`;
+        const newTitle = `Pong Game ${gameId}`;
+        const newContent = `Playing Pong Game ${gameId}`;
+        navigateTo(newTitle, newUrl, newContent);
         const canvas = document.getElementById('gameCanvas');
+        const playForm = document.getElementById('playForm');
+
+        // Hide the form and show the canvas
+        playForm.classList.remove('visible');
+        playForm.classList.add('hidden');
+        canvas.classList.remove('hidden');
+        canvas.classList.add('visible');
+
         const ctx = canvas.getContext('2d');
         const paddleWidth = 10, paddleHeight = 100, ballSize = 10;
 
@@ -224,6 +175,13 @@ document.getElementById('playForm').addEventListener('submit', function(event) {
             clearInterval(gameLoopInterval);
 
             setTimeout(() => {
+                // Hide the canvas and show the form
+                canvas.classList.remove('visible');
+                canvas.classList.add('hidden');
+                playForm.classList.remove('hidden');
+                playForm.classList.add('visible');
+
+                // Clear the canvas
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = 'black';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);

@@ -3,8 +3,10 @@ import asyncio
 import django
 import os
 
+from django.db import transaction#Test
 from channels.layers import get_channel_layer
 from channels.db import database_sync_to_async
+# from asgiref.sync import async_to_sync, sync_to_async
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Transcendance.settings')
 django.setup()
@@ -53,6 +55,7 @@ class PongGame:
         # Cas Remote a ajouter
 
 
+
     # Cette fonction lance une partie en creant une tache en arriere plan dans laquelle la boucle du jeu se lance
     # Cela permet a la boucle de se lancer tout en liberant le consumer pour qu'il ne bloque pas au lancement du jeu
     async def start_game(self):
@@ -60,46 +63,63 @@ class PongGame:
             self.is_running = True
             self.game_loop_task = asyncio.create_task(self.game_loop())
 
-    # Situations pour que cette fonction soit appelee :
-        #-La partie est finie normalement donc enregisrement des resultats et la tache se termine toute seule
-        #-La partie se termine a cause de la deconnexion de tous les clients donc il faut stopper la tache en arriere plan
-        # et attendre que celle ci soit bien arretee. Pas d'enregistrement de resultats puisque arret de maniere inattendue
-    async def stop_game(self):
-        # Stockage de resultats si la partie est terminee normalement
-        if self.play.is_finished:
-            #Identification du winner et du losers
-            if self.team_scores[1] == 3:
-                #Listes d'objets contenant des Player
-                winners = [self.play.player1]
-                losers = [self.play.player2]
-            else:
-                winners = [self.play.player2]
-                losers = [self.play.player1]
-            #Ajout du winner et loser supplementaire en cas de mode multijoueur (2v2)
-            if self.play.nb_players == 4:
-                winners.append(self.play.player3 if self.team_scores[1] == 3 else self.play.player4)
-                losers.append(self.play.player4 if self.team_scores[1] == 3 else self.play.player3)
-            #Dictionnaire player concerne (cle): score du joueur (valeur)
-            scores = {
-                "player1": self.team_scores[1],#remplacer par winners[0].name
-                "player2": self.team_scores[2]
-            }
-            if self.play.nb_players == 4:
-                scores.update({
-                    "player3": self.team_scores[1],
-                    "player4": self.team_scores[2]
-                })
-            # fonction du model Play qui enregistre dans la base de donnee les resultats
-            await self.play.end_game(winners, losers, scores)
-        # Arret de la tache en arriere plan en cas d'arret inattendu
-        elif self.is_running:
-            try:
-                self.game_loop_task.cancel()
-                await self.game_loop_task
-            except asyncio.CancelledError:
-                pass
-        # Detruire le Consumer ici quoiqu'il arrive
 
+    # Stockage de resultats si la partie est terminee normalement
+    async def stop_game(self):
+        if self.play.is_finished:
+            winners = await self.get_winners()
+            losers = await self.get_losers()
+            score = str(self.team_scores[1]) + "-" + str(self.team_scores[2])
+            self.play.results = {
+                "winners": winners,
+                "losers": losers,
+                "score": score
+            }
+            await database_sync_to_async(self.play.save)()
+
+    async def get_winners(self):
+        winners = []
+        if self.team_scores[1] == 3:
+            winners.append(await self.get_player_id(1))
+            await self.play.add_victory(1)
+            if self.play.nb_players == 4:
+                winners.append(await self.get_player_id(3))
+                await self.play.add_victory(3)
+        else:
+            winners.append(await self.get_player_id(2))
+            await self.play.add_victory(2)
+            if self.play.nb_players == 4:
+                winners.append(await self.get_player_id(4))
+                await self.play.add_victory(4)
+        return winners
+
+    async def get_losers(self):
+        losers = []
+        if self.team_scores[1] == 3:
+            losers.append(await self.get_player_id(2))
+            await self.play.add_defeat(2)
+            if self.play.nb_players == 4:
+                losers.append(await self.get_player_id(4))
+                await self.play.add_defeat(4)
+        else :
+            losers.append(await self.get_player_id(1))
+            await self.play.add_defeat(1)
+            if self.play.nb_players == 4:
+                losers.append(await self.get_player_id(3))
+                await self.play.add_defeat(3)
+        return losers
+
+    @database_sync_to_async
+    def get_player_id(self, player_number):
+        if player_number == 1:
+            return self.play.player1.id if self.play.player1 is not None else "player1"
+        elif player_number == 2:
+            return self.play.player2.id if self.play.player2 is not None else "player2"
+        elif player_number == 3:
+            return self.play.player3.id if self.play.player3 is not None else "player3"
+        elif player_number == 4:
+            return self.play.player4.id if self.play.player4 is not None else "player4"
+        return "Unknown_player"
 
     async def update_player_position(self, player_number, y):
         if player_number in self.players_y:
@@ -182,10 +202,10 @@ class PongGame:
             )
             await asyncio.sleep(1 / 60)
             if self.team_scores[1] == 3 or self.team_scores[2] == 3:
-                self.play.is_finished = True
                 self.is_running = False
+                self.play.is_finished = True
                 await database_sync_to_async(self.play.save)()
-                #Envoi d'un message pour signifier la fin de partie
+                await self.stop_game()
                 await self.channel_layer.group_send(
                     self.game_group_name,
                     {
@@ -193,55 +213,4 @@ class PongGame:
                         'message': 'end_game'
                     }
                 )
-                await self.stop_game()
 
-
-# PONG GAME DE JULIEN
-# import random
-
-# class PongGame:
-#     def __init__(self, width=800, height=600, paddle_width=10, paddle_height=100, ball_radius=10):
-#         self.width = width
-#         self.height = height
-#         self.paddle_width = paddle_width
-#         self.paddle_height = paddle_height
-#         self.ball_radius = ball_radius
-
-#         # Initialisation des positions
-#         self.player1_y = self.height // 2 - self.paddle_height // 2
-#         self.player2_y = self.height // 2 - self.paddle_height // 2
-
-#         # Initialisation de la balle
-#         self.ball_x, self.ball_y = self.width // 2, self.height // 2
-#         self.ball_speed_x, self.ball_speed_y = 5 * random.choice((1, -1)), 5 * random.choice((1, -1))
-
-#     def update_player1_position(self, y):
-#         self.player1_y = y
-
-#     def update_game_state(self):
-#         # Update ball position
-#         self.ball_x += self.ball_speed_x
-#         self.ball_y += self.ball_speed_y
-
-#         # Rebond sur les murs du haut et du bas
-#         if self.ball_y - self.ball_radius <= 0 or self.ball_y + self.ball_radius >= self.height:
-#             self.ball_speed_y *= -1
-
-#         # Rebond sur les raquettes
-#         if (self.ball_x - self.ball_radius <= self.paddle_width and self.player1_y < self.ball_y < self.player1_y + self.paddle_height) or \
-#            (self.ball_x + self.ball_radius >= self.width - self.paddle_width and self.player2_y < self.ball_y < self.player2_y + self.paddle_height):
-#             self.ball_speed_x *= -1
-
-#         # Rebond sur les murs de gauche et de droite
-#         if self.ball_x - self.ball_radius <= 0 or self.ball_x + self.ball_radius >= self.width:
-#             self.ball_x, self.ball_y = self.width // 2, self.height // 2
-#             self.ball_speed_x *= random.choice((1, -1))
-#             self.ball_speed_y *= random.choice((1, -1))
-
-#         # Retourne les positions actuelles pour les envoyer via WebSocket
-#         return {
-#             'ball_x': self.ball_x,
-#             'ball_y': self.ball_y,
-#             'player1_y': self.player1_y,
-#             'player2_y': self.player2_y
-#         }

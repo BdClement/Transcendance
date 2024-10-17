@@ -13,6 +13,7 @@ from .models import Play
 
 class PlayConsumer(AsyncWebsocketConsumer):
 	async def connect(self):
+		print('Appel a connect dans Consumer')
 		#Checker si la partie existe bien et n'est pas deja finie
 		self.game_id = self.scope['url_route']['kwargs']['game_id']#Attribu l'id de la partie au consumer
 		# A modifier avec play_id
@@ -41,12 +42,13 @@ class PlayConsumer(AsyncWebsocketConsumer):
 		# Probleme pour remote : Si l'instance de PongGame est creee dans le Consumer, si ce Consumer se deconnecte pour n'importe quelle raison
 		# Le jeu serait detruit avec le consumer et affecterait alors les autres players. Solutions :
 			#- Creer un objet global intermediaire qui stockerait les objets PongGameet qu'on manipulerait depuis cet objet ??
+			#- Creer l'objet PongGame a l'interieur de l'objet Play ?
 		if await self.play_ready_to_start():
 			self.pong = await sync_to_async(PongGame, thread_sensitive=True)(self.game_id, self.game_group_name)
 			await self.pong.start_game()
 
 	async def disconnect(self, close_code):
-
+		await database_sync_to_async(self.play.refresh_from_db)()
 		if hasattr(self, 'game_group_name'):
 			await self.channel_layer.group_discard(
 				self.game_group_name,
@@ -54,8 +56,11 @@ class PlayConsumer(AsyncWebsocketConsumer):
 			)
 		if hasattr(self, 'play'):
 			await self.rm_players_from_play()
-			if self.play.player_connected == 0 and hasattr(self, 'pong'):# A modifier puisque En remote pong ne sera pas lie a un consuemer mais global
-				await self.pong.stop_game()
+		#Cas de deconnexion inattendu pour mettre fin a la boucle en arriere plan
+		if hasattr(self, 'pong') and self.play.player_connected == 0:
+			self.pong.is_running = False
+
+		#Rappel : en remote l'objet pongGame ne devra pas etre associe a un consumer
 
 	# Recevoir un message du WebSocket et traiter les mouvements des joueurs
 	async def receive(self, text_data):
@@ -63,22 +68,12 @@ class PlayConsumer(AsyncWebsocketConsumer):
 		player = text_data_json.get('player')
 		move = text_data_json.get('move')
 		if move is not None:
-			if  player == 1:
-				await self.pong.update_player_position(1, text_data_json['move'])
-			elif player == 2:
-				await self.pong.update_player_position(2, text_data_json['move'])
-			elif player == 3:
-				await self.pong.update_player_position(3, text_data_json['move'])
-			elif player == 4:
-				await self.pong.update_player_position(4, text_data_json['move'])
+			if 1 <= player <=4:
+				await self.pong.update_player_position(player, text_data_json['move'])
 
 	# Methode que chaque consumer connecte appelera individuellement via le channel_layer dans PongGame
 	async def update_game(self, event):
 		await self.send(text_data=json.dumps(event))
-		# Fermeture de la socket si c'est la fin de la partie
-		message = event.get('message')# Pour eviter qu'une exception soit levee si 'message' est absent
-		if message == 'end_game':
-			await self.close()
 
 	# Methodes utilitaires
 	async def play_is_available(self):
@@ -105,4 +100,3 @@ class PlayConsumer(AsyncWebsocketConsumer):
 		else:
 			self.play.player_connected -= self.play.nb_players
 		await database_sync_to_async(self.play.save)()
-

@@ -15,20 +15,39 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, re_path
+from django.urls import path, re_path, include
 from rest_framework import routers
 from game import views
-from game.views import PlayCreateAPIView, PlayDetailAPIView
+from game.views import PlayCreateAPIView, PlayDetailAPIView, PlaySubscribeAPIView
+from game.views import TournamentViewSet
+from authentication.views import LoginAPI, SignupAPI, Logout, UserInfoAPI, UserProfileView, UserProfileUpdateView, UserDeleteView, AddFriendView, SuppFriendView, FollowingListView, FollowersListView, UserDetailView
+from authentication.views import get_csrf_token
 
-# router = routers.SimpleRouter()#A checker plus !
+router = routers.DefaultRouter()#Similaire a SimpleRouter mais offre api-root qui expose les endpoints disponibles
+router.register('tournaments', TournamentViewSet, basename='tournament')
 
 # router.register('play/create', )
 urlpatterns = [
     path('admin/', admin.site.urls),
 	path('api/play/create', views.PlayCreateAPIView.as_view(), name='play_create'),
 	path('api/play/detail/<play_id>', views.PlayDetailAPIView.as_view(), name='play_detail'),
-	# path('api/play/start/<int:id>', views.PlayStartAPIView.as_view()),
-	# path('api-auth/', include('rest_framework.urls')), #activation de l'authentification DRF
+	path('api/play/join/<play_id>', views.PlaySubscribeAPIView.as_view(), name="play_join"),
+	path('api/', include(router.urls)),
+	path('api/play/create', views.PlayCreateAPIView.as_view(), name='play_create'),
+    path('api/play/detail/<play_id>', views.PlayDetailAPIView.as_view(), name='play_detail'),
+    path('api/login/', LoginAPI.as_view(), name='login'),
+    path('api/signup/', SignupAPI.as_view(), name='signup'),
+    path('api/logout/', Logout.as_view(), name='logout'),
+    path('api/user/', UserInfoAPI.as_view(), name='user-info'),
+    path('api/userprofile/<int:user_id>/', UserProfileView.as_view(), name='userprofile'),
+    path('api/userprofileupdate/', UserProfileUpdateView.as_view(), name='userprofileupdate'),
+    path('api/userdelete/', UserDeleteView.as_view(), name='userdelete'),
+    path('api/addfriend/<int:user_id>/', AddFriendView.as_view()),
+    path('api/users/<str:username>/', UserDetailView.as_view(), name='user-detail'),
+    path('api/suppfriend/<int:user_id>/', SuppFriendView.as_view()),
+    path('api/following/', FollowingListView.as_view()),
+    path('api/followers/', FollowersListView.as_view()),
+	path('api/get-csrf-token/', get_csrf_token, name='get_csrf_token'),
 	re_path(r'^.*$', views.index, name='index'),
 ]
 

@@ -1,5 +1,6 @@
 from django.db import models
 from channels.db import database_sync_to_async
+from authentication.models import User
 
 # Create your models here.
 
@@ -9,17 +10,21 @@ from channels.db import database_sync_to_async
 		# with connection.cursor() as cursor:
 		# cursor.execute(f"DELETE FROM sqlite_sequence WHERE name='{Play._meta.db_table}';")
 
+# AJOUT DE LA DATE A FAIRE POUR MODULE D'ILONA
 class Play(models.Model):
 	#Liason de ce joueur a cette partie, ce joueur peut etre lier a plusieurs parties
-	# player1 = models.ForeignKey(Player, on_delete=models.SET_NULL, related_name='player_1')
-	player1 =  models.CharField(max_length=255, default='player1')
-	player2 =  models.CharField(max_length=255, default='player2')
-	player3 =  models.CharField(max_length=255, default='player3')
-	player4 =  models.CharField(max_length=255, default='player4')
+	player1 = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='player1')
+	player2 = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='player2')
+	player3 = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='player3')
+	player4 = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='player4')
+	# player1 =  models.CharField(max_length=255, default='player1')
+
 	#Lier la partie a un tournoi, la partie peut etre lier uniquemenr a ce tournoi
-	# tournament = models.ForeignKey(Tournament, related_name='plays', on_delte=SET_NULL)
-	#Pour indiquer l'ordre au sein d'un tournoi par tour
-	# order_in_rounds = models.IntegerField(default=0)
+	#Liason a Tournament via une string car Django le permet pour eiter les boucles d'importations
+	#Django resout la string avec le model qui est declare plus tard dans le fichier
+	tournament = models.ForeignKey('Tournament', related_name='plays', on_delete=models.SET_NULL, null=True)
+	#Pour indiquer a quel tour appartient la partie dans le tournoi
+	tournament_round = models.PositiveIntegerField(default=1)
 
 	player_connected= models.PositiveIntegerField(default=0)#Nombre de joueurs connectes a la partie
 	nb_players = models.IntegerField(choices=[(2, 'Deux joueurs'), (4, 'Quatre joueurs')], default=2)# Nombre de joueur = mode normal ou 2V2# Nombre de joueur = mode normal ou 2V2
@@ -30,39 +35,111 @@ class Play(models.Model):
 	results = models.JSONField(null=True, blank=True)
 	is_finished = models.BooleanField(default=False)
 
-	async def end_game(self, winners, losers, scores):
-		#Mise a jour des statistiques de chaque joueur
-		# Ou faire directemnt une fonciton dans la classe Player avec permissions necessaires qui fait cela
-		# mais attention a l'acces a cette fonction qui permettrait de modifier les resultats d'un joueurs facilement
-		# for winner in winners:
-		# 	winner.victories += 1
-		# 	winner.save()
-		# for loser in losers:
-		# 	loser.defeats += 1
-		# 	loser.save()
-		self.results = {
-			# "winners": [winner.name for winner in winners],
-			"winners": winners,# A modifier lorsque des objet Player seront attribuer a l'interieur de Play
-			# "losers": [loser.name for loser in losers],
-			"losers": losers,
-			"score": scores
-		}
-		await database_sync_to_async(self.save)()
+	async def add_victory(self, nb_player):
+		if nb_player == 1:
+			player = self.player1
+		elif nb_player == 2:
+			player = self.player2
+		elif nb_player == 3:
+			player = self.player3
+		elif nb_player == 4:
+			player = self.player4
+		else :
+			player = None
 
-#Pour acceder aux parties dans un tournoi, utiliser l'attribut revers generee automatiquement par Django grace au related_name
+		if player is not None :
+			player.nbVictoires += 1
+			await database_sync_to_async(player.save)()
+
+	async def add_defeat(self, nb_player):
+		if nb_player == 1:
+			player = self.player1
+		elif nb_player == 2:
+			player = self.player2
+		elif nb_player == 3:
+			player = self.player3
+		elif nb_player == 4:
+			player = self.player4
+		else :
+			player = None
+
+		if player is not None :
+			player.nbDefaites += 1
+			await database_sync_to_async(player.save)()
+
+	def add_player(self, player):
+		if self.player1 is None:
+			self.player1 = player
+		elif self.player2 is None:
+			self.player2 = player
+		elif self.player3 is None:
+			self.player3 = player
+		elif self.player4 is None:
+			self.player4 = player
+		else:
+			return False
+		self.save()
+		return True
+
+
+
+
+
+#Pour acceder aux parties dans un tournoi, utiliser l'attribut reverse genere automatiquement par Django grace au related_name
 #Exemple ici tournament.plays.all()
-# class Tournament(models.Models):
+class Tournament(models.Model):
 
-# 	#Nombre joueur d'un tournoi flexible, soumis a des choix predefinis tout de meme
-# 	nb_players = models.IntegerField(choices=[ (4, 'Quatre joueurs'), (8, 'Huit joueurs')], default=4)
+	#Nombre joueur d'un tournoi flexible, soumis a des choix predefinis tout de meme
+	nb_players = models.IntegerField(choices=[ (4, 'Quatre joueurs'), (8, 'Huit joueurs')], default=4)
 
-# 	#Aller chercher dans la database grace aux alias les players concercne
-# 	#Ajouter cela a au field players pour lier plusieurs player a ce tournoi (flexibilite du nombre de joueur au tournoi)
-# 	# Acces au joueur d'un tournoi avec par exemple : tournament.players.all()
-# 	# players = models.ManyToManyField(Player, related_name='tournaments_players')
+	#Aller chercher dans la database grace aux alias les players concercne
+	#Ajouter cela a au field players pour lier plusieurs player a ce tournoi (flexibilite du nombre de joueur au tournoi)
+	# Acces au joueur d'un tournoi avec par exemple : tournament.players.all()
 
-# 	results = models.JSONField(null=True, blank=True)
-# 	is_finished = models.BooleanField(default=False)
+	players = models.ManyToManyField(User, related_name='tournaments_players')
+	results = models.JSONField(null=True, blank=True)
+	is_finished = models.BooleanField(default=False)
+	current_round = models.IntegerField(default=0)
+
+	def create_next_round(self):
+		if self.current_round == 0:#Cas du premier round
+			players = self.players.all()
+			self.create_plays_for_new_round(players)
+		else:
+			#recherche de toutes les parties finies du round actuel
+			plays_from_last_round = Play.objects.filter(tournament=self, tournament_round=self.current_round, is_finished=True)
+			if plays_from_last_round.count() == 1:#La finale a ete jouee
+				#Stockage de results avec plays_from_last_round
+				self.results = {
+					"players": [player.id for player in self.players.all()],
+					"winner": plays_from_last_round.first().results['winners'],
+					"final_score": plays_from_last_round.first().results['score']
+				}
+				self.is_finished = True
+			else :#Creation de toutes les parties du prochain round
+				winners = []
+				for play in plays_from_last_round:
+					if 'winners' in play.results:
+						winners.append(play.results['winners'])
+					else:
+						print(f'PROBLEME: winners nest pas present dans results de la partie === {play.results}')
+				self.create_plays_for_new_round(winners)
+
+		if not self.is_finished:
+			self.current_round += 1
+		self.save()
+
+	def create_plays_for_new_round(self, players):
+		if players.count() % 2 != 0:
+			print(f'PROBLEME: dans create_plays_for_new_round, les joueurs recus sont impairs === {players}')
+		else:
+			for i in range(0, len(players), 2):
+				player1 = players[i]
+				if i + 1 < len(players):
+					player2 = players[i + 1]
+					Play.objects.create(player1=player1, player2=player2, tournament=self, tournament_round=self.current_round + 1)
 
 
+
+		#API equivalente a PlayDetailsAPIView mais pour les tournois pour transmettre les donnees d'un tournoi
 

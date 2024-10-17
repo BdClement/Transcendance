@@ -25,7 +25,7 @@ class PlayDetailSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = Play
-		fields = ['nb_players', 'is_finished', 'results']
+		fields = ['nb_players', 'is_finished', 'date', 'results']
 
 	# Methode responsable de transformer les id stocker dans la base de donnee en username pour les clients
 	def get_results(self, obj):
@@ -51,6 +51,14 @@ class PlayDetailSerializer(serializers.ModelSerializer):
 				transformed_results[key] = value
 		return transformed_results
 
+# A faire dans le front
+# Interface de Match History :
+	#Tournoi + interface pour continuer un tournoi = OK
+	#stat win and losses grace a l'api GET sur les users nb_parties jouees, nombre de victoires, nombre de defaites voir plus = OK
+	#USer can update their information = OK
+
+	#User can view their online status (a voir avec ilo)
+	#History User 1v1 avec date, results, play_in_tournament
 
 
 

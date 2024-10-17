@@ -14,6 +14,7 @@ from rest_framework.response import Response
 # , viewsets, permissions
 from authentication.models import User
 from authentication.serializers import LoginSerializer, UserSerializer, SignupSerializer, UserUpdateSerializer, PublicUserSerializer
+from game.models import Play
 
 # Create your views here.
 
@@ -119,7 +120,12 @@ class UserProfileView(APIView):
 			serializer = UserSerializer(user)
 		else:
 			serializer = PublicUserSerializer(user)
+			#Appel de logique match history
 		return Response(serializer.data)
+
+	#Ajoute par Clement pour le Match History
+	def get_match_history(self, user):
+		# plays = Play.objects.filter(Q(player1=user) |)
 
 class UserProfileUpdateView(APIView):
 	permission_classes = [IsAuthenticated]

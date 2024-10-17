@@ -3,7 +3,8 @@ import asyncio
 import django
 import os
 
-from django.db import transaction#Test
+# from django.db import transaction#Test
+from django.utils import timezone
 from channels.layers import get_channel_layer
 from channels.db import database_sync_to_async
 # from asgiref.sync import async_to_sync, sync_to_async
@@ -75,6 +76,7 @@ class PongGame:
                 "losers": losers,
                 "score": score
             }
+            self.play.date = timezone.now()
             await database_sync_to_async(self.play.save)()
 
     async def get_winners(self):

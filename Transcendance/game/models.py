@@ -29,6 +29,7 @@ class Play(models.Model):
 	player_connected= models.PositiveIntegerField(default=0)#Nombre de joueurs connectes a la partie
 	nb_players = models.IntegerField(choices=[(2, 'Deux joueurs'), (4, 'Quatre joueurs')], default=2)# Nombre de joueur = mode normal ou 2V2# Nombre de joueur = mode normal ou 2V2
 	remote = models.BooleanField(default=False)# Remote ou pas
+	date = models.DateTimeField(blank=True, null=True)
 
 	#Choix de stocker les resultats dans un JSONField pour permettre une flexibilite au client en terme d'affchage
 	#Possibilite de modifier le field sans toucher a la base de donnee

@@ -84,8 +84,67 @@ class Play(models.Model):
 
 
 
+#VERSION TOURNAMENT JULIEN
+#Pour acceder aux parties dans un tournoi, utiliser l'attribut reverse genere automatiquement par Django grace au related_name
+#Exemple ici tournament.plays.all()
+# class Tournament(models.Model):
+#     nb_players = models.IntegerField(choices=[(4, 'Quatre joueurs'), (8, 'Huit joueurs')], default=4)
+#     players = models.ManyToManyField(User, related_name='tournaments_players')
+#     results = models.JSONField(null=True, blank=True)
+#     is_finished = models.BooleanField(default=False)
+#     current_round = models.IntegerField(default=0)
 
+#     def create_next_round(self):
+#         if self.current_round == 0:  # Cas du premier round
+#             players = list(self.players.all())
+#             self.create_plays_for_new_round(players)
+#         else:
+#             plays_from_last_round = Play.objects.filter(tournament=self, tournament_round=self.current_round, is_finished=True)
 
+#             if plays_from_last_round.count() == 1:  # La finale a été jouée
+#                 final_play = plays_from_last_round.first()
+#                 self.results = {
+#                     "players": [player.id for player in self.players.all()],
+#                     "winner": final_play.results.get('winners', []),
+#                     "final_score": final_play.results.get('score', {})
+#                 }
+#                 self.is_finished = True
+#             else:  # Création des parties du prochain round
+#                 winners = []
+#                 for play in plays_from_last_round:
+#                     winner_ids = play.results.get('winners', [])
+#                     winners.extend(User.objects.filter(id__in=winner_ids))
+
+#                 if winners:
+#                     self.create_plays_for_new_round(winners)
+#                 else:
+#                     print(f"PROBLEME: Aucun gagnant trouvé pour le round {self.current_round}")
+
+#         if not self.is_finished:
+#             self.current_round += 1
+#         self.save()
+
+#     def create_plays_for_new_round(self, players):
+#         players = list(players)
+#         if len(players) % 2 != 0:
+#             print(f'AVERTISSEMENT: Nombre impair de joueurs ({len(players)}). Ajout d\'un "bye".')
+#             players.append(None)
+
+#         for i in range(0, len(players), 2):
+#             player1 = players[i]
+#             player2 = players[i + 1] if i + 1 < len(players) else None
+
+#             if player1 and player2:
+#                 Play.objects.create(
+#                     player1=player1,
+#                     player2=player2,
+#                     tournament=self,
+#                     tournament_round=self.current_round + 1
+#                 )
+#             elif player1:
+#                 print(f"Joueur {player1.username} passe automatiquement au prochain tour (bye)")
+
+#VERSION TOURNAMENT CLEMENT
 #Pour acceder aux parties dans un tournoi, utiliser l'attribut reverse genere automatiquement par Django grace au related_name
 #Exemple ici tournament.plays.all()
 class Tournament(models.Model):
@@ -105,11 +164,13 @@ class Tournament(models.Model):
 	def create_next_round(self):
 		if self.current_round == 0:#Cas du premier round
 			players = self.players.all()
+			print(f'TEST dans create_next_round pour le premier tour === {players}')
 			self.create_plays_for_new_round(players)
 		else:
 			#recherche de toutes les parties finies du round actuel
 			plays_from_last_round = Play.objects.filter(tournament=self, tournament_round=self.current_round, is_finished=True)
 			if plays_from_last_round.count() == 1:#La finale a ete jouee
+				print(f'TEST dans create_next_round quand la finale a ete jouee === {plays_from_last_round}')
 				#Stockage de results avec plays_from_last_round
 				self.results = {
 					"players": [player.id for player in self.players.all()],
@@ -124,10 +185,12 @@ class Tournament(models.Model):
 						winners.append(play.results['winners'])
 					else:
 						print(f'PROBLEME: winners nest pas present dans results de la partie === {play.results}')
+					print(f'TEST dans create_next_round les winners sont === {winners}')
 				self.create_plays_for_new_round(winners)
 
 		if not self.is_finished:
 			self.current_round += 1
+		print(f'TEST dans create_next_round current_round en fin dappel === {self.current_round}')
 		self.save()
 
 	def create_plays_for_new_round(self, players):
@@ -138,7 +201,10 @@ class Tournament(models.Model):
 				player1 = players[i]
 				if i + 1 < len(players):
 					player2 = players[i + 1]
+					print(f'TEST dans create_plays_for_new_round === player1 {player1}, player2 {player2}')
 					Play.objects.create(player1=player1, player2=player2, tournament=self, tournament_round=self.current_round + 1)
+				else:
+					print(f'TEST dans create_plays_for_new_round PROBLEME Un nombre impair est donne')
 
 
 

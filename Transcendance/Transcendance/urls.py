@@ -20,7 +20,8 @@ from rest_framework import routers
 from game import views
 from game.views import PlayCreateAPIView, PlayDetailAPIView, PlaySubscribeAPIView
 from game.views import TournamentViewSet
-from authentication.views import LoginAPI, SignupAPI, Logout, UserInfoAPI, UserProfileView, UserProfileUpdateView, UserDeleteView, AddFriendView, SuppFriendView, FollowingListView, FollowersListView, UserDetailView
+from authentication.views import LoginAPI, SignupAPI, Logout, UserInfoAPI, UserProfileView, UserProfileUpdateView, UserDeleteView
+from authentication.views import AddFriendView, SuppFriendView, FollowingListView, FollowersListView, UserDetailView, MatchHistoryView
 from authentication.views import get_csrf_token
 
 router = routers.DefaultRouter()#Similaire a SimpleRouter mais offre api-root qui expose les endpoints disponibles
@@ -35,6 +36,8 @@ urlpatterns = [
 	path('api/', include(router.urls)),
 	# path('api/play/create', views.PlayCreateAPIView.as_view(), name='play_create'),
     # path('api/play/detail/<play_id>', views.PlayDetailAPIView.as_view(), name='play_detail'),
+	path('api/user/match-history/', MatchHistoryView.as_view(), name='match-history'),
+	# path('users/<int:user_id>/match-history/', MatchHistoryView.as_view(), name='match-history'),#MatchHistory dautre joueurs (amis)??
     path('api/login/', LoginAPI.as_view(), name='login'),
     path('api/signup/', SignupAPI.as_view(), name='signup'),
     path('api/logout/', Logout.as_view(), name='logout'),

@@ -183,3 +183,9 @@ LOGGING = {
         'level': 'DEBUG',
     },
 }
+
+
+REST_FRAMEWORK = {
+	'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',#LimitOffsetPagination (plus avances)
+	'PAGE_SIZE': 5,
+}

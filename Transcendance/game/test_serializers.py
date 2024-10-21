@@ -4,6 +4,7 @@ from rest_framework.test import APITestCase
 from .serializer import PlayCreateSerializer, PlayDetailSerializer
 from .serializer import TournamentSerializer
 from game.models import Play, Tournament
+from authentication.models import User
 
 # from game.models import Play
 
@@ -19,8 +20,6 @@ class TestPlaySerializer(APITestCase):
 		serializer = PlayCreateSerializer(data=data)
 		self.assertFalse(serializer.is_valid())
 		self.assertIn('nb_players must be 2 or 4', serializer.errors['non_field_errors'])# erreur validation globale
-		# print(f'Is valid: {serializer.is_valid()}')
-		# print(f'Errors: {serializer.errors}')
 
 	def test_serialization(self):
 		data = {'nb_players': 2, 'remote': True}
@@ -38,7 +37,7 @@ class TestPlayDetailSerializer(APITestCase):
 
 	def test_serializer_valid(self):
 		data = self.serializer.data
-		self.assertEqual(set(data.keys()), {'nb_players', 'is_finished', 'results'})
+		self.assertEqual(set(data.keys()), {'nb_players', 'is_finished', 'date', 'results'})
 		self.assertEqual(data['nb_players'], self.play.nb_players)
 		self.assertEqual(data['is_finished'], self.play.is_finished)
 		self.assertEqual(data['results'], self.play.results)
@@ -48,9 +47,13 @@ class TestTournamentSerializer(APITestCase):
 
 	def setUp(self):
 		self.tournament = Tournament.objects.create()
+		self.player1 = User.objects.create(username="salut1", alias="test1", email="test1@42.fr")
+		self.player2 = User.objects.create(username="salut2", alias="test2", email="test2@42.fr")
+		self.player3 = User.objects.create(username="salut3", alias="test3", email="test3@42.fr")
+		self.player4 = User.objects.create(username="salut4", alias="test4", email="test4@42.fr")
 
 	def test_serializer_validation(self):
-		serializer = TournamentSerializer(data={ 'nb_players': 4, 'alias_names': ['sami', 'samu', 'sama', 'samo']})
+		serializer = TournamentSerializer(data={ 'nb_players': 4, 'alias_names': ['test1', 'test2', 'test3', 'test4']})
 		self.assertTrue(serializer.is_valid())
 
 	def test_serializer_invalid_data(self):
@@ -65,13 +68,13 @@ class TestTournamentSerializer(APITestCase):
 
 	def test_serialiazer_data(self):
 		serializer = TournamentSerializer(self.tournament)
-		self.assertEqual(serializer.data, {'nb_players': 4, 'is_finished': False, 'results':  None})
+		self.assertEqual(serializer.data, {'id': 1, 'nb_players': 4, 'is_finished': False, 'results':  None})
 
 	def test_deserialization_valid_data(self):
 		#Field requis
 		data = {
 			'nb_players': 4,
-			'alias_names': ['sami', 'samu', 'sama', 'samo'],
+			'alias_names': ['test1', 'test2', 'test3', 'test4'],
 		}
 		serializer = TournamentSerializer(data=data)
 		self.assertTrue(serializer.is_valid(), serializer.errors)

@@ -1,23 +1,27 @@
 from django.test import TestCase
 
+from authentication.models import User
 from game.models import Play, Tournament
 
 class TestPlayModel(TestCase):
 
 	def setUp(self):
 		self.play = Play.objects.create(nb_players=4, remote=True)
+		self.user1 = User.objects.create(username='testuser1', password='p#ssword123',email='test@42.fr')
+		self.user2 = User.objects.create(username='testuser2', password='p#ssword1234',email='test2@42.fr')
+		self.play.player1 = self.user1
+		self.play.player2 = self.user2
+		self.play.save()
 
 	def test_model_creation(self):
 
 		self.assertEqual(self.play.nb_players, 4)
 		self.assertEqual(self.play.remote, True)
+		self.assertEqual(self.play.player1, self.user1)
+		self.assertEqual(self.play.player2, self.user2)
 
 	def test_default_value(self):
 		play = Play.objects.create()
-		self.assertEqual(play.player1, 'player1')
-		self.assertEqual(play.player2, 'player2')
-		self.assertEqual(play.player3, 'player3')
-		self.assertEqual(play.player4, 'player4')
 		self.assertEqual(play.player_connected, 0)
 		self.assertEqual(play.nb_players, 2)
 		self.assertEqual(play.remote, False)

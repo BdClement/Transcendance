@@ -7,7 +7,8 @@ from django.contrib.auth import login, logout
 from django.contrib.auth import get_user_model
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from rest_framework import status
+from django.db.models import Q #Fourni par Django pour permettre de combiner des requetes SQL complexes
+from rest_framework import status, generics
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -15,6 +16,7 @@ from rest_framework.response import Response
 from authentication.models import User
 from authentication.serializers import LoginSerializer, UserSerializer, SignupSerializer, UserUpdateSerializer, PublicUserSerializer
 from game.models import Play
+from game.serializer import PlayDetailSerializer
 
 # Create your views here.
 
@@ -120,12 +122,32 @@ class UserProfileView(APIView):
 			serializer = UserSerializer(user)
 		else:
 			serializer = PublicUserSerializer(user)
-			#Appel de logique match history
 		return Response(serializer.data)
 
-	#Ajoute par Clement pour le Match History
-	def get_match_history(self, user):
-		# plays = Play.objects.filter(Q(player1=user) |)
+#Classe ajoute par Clement pour faire le MatchHistory
+	#ListAPIView gere les requetes de type List et Pagination
+class MatchHistoryView(generics.ListAPIView):
+
+	serializer_class = PlayDetailSerializer #Specifie a ListAPIView comment serializer les donnees
+	permission_classes = [IsAuthenticated]
+	#pagination_class = #Specifier dans les settings par defaut mais personnalisable comme ceci
+	#Cette methode specifie comment recuperer les donnees
+	#Une fois fait, DRF utilisera serializer_class pour serialiser les donnees recuperees
+	def get_queryset(self):
+		#Cas si on autorise de consulter le Match History d'autres joueurs (Mettre condition d'ami)
+		# user_id = self.kwargs.get('user_id', None)
+		# if user_id:
+		# 	user = User.objects.get(pk=user_id)
+		# else:
+		user = self.request.user
+		#La pagination est faites automatiquement par DRF grace a la reqquete qui contient des parametres sur la pages souhaitees
+		return Play.objects.filter(
+			Q(player1=user) |
+			Q(player2=user) |
+			Q(player3=user) |
+			Q(player4=user)
+		).order_by('date')
+
 
 class UserProfileUpdateView(APIView):
 	permission_classes = [IsAuthenticated]
@@ -182,3 +204,5 @@ class FollowersListView(APIView):
 		followers_users = request.user.followers.all()
 		followers_data = [{"id": user.id, "username": user.username} for user in followers_users]
 		return Response(followers_data, status=status.HTTP_200_OK)
+
+

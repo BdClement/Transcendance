@@ -1,5 +1,6 @@
 from django.urls import reverse_lazy, reverse
 from rest_framework.test import APITestCase
+from rest_framework.authtoken.models import Token
 
 from game.models import Play, Tournament
 from authentication.models import User
@@ -73,13 +74,13 @@ class TestTournamentAPI(APITestCase):
 		self.url_does_not_exist = reverse_lazy('tournament-detail', kwargs={'pk': 1500})
 		#Creer des joueurs fictifs pour simuler les liens avec les alias_names
 		self.player1 = User.objects.create(username="salut1", alias="test1", email="test1@42.fr")
-		self.player1 = User.objects.create(username="salut2", alias="test2", email="test2@42.fr")
-		self.player1 = User.objects.create(username="salut3", alias="test3", email="test3@42.fr")
-		self.player1 = User.objects.create(username="salut4", alias="test4", email="test4@42.fr")
-		self.player1 = User.objects.create(username="salut5", alias="test5", email="test5@42.fr")
-		self.player1 = User.objects.create(username="salut6", alias="test6", email="test6@42.fr")
-		self.player1 = User.objects.create(username="salut7", alias="test7", email="test7@42.fr")
-		self.player1 = User.objects.create(username="salut8", alias="test8", email="test8@42.fr")
+		self.player2 = User.objects.create(username="salut2", alias="test2", email="test2@42.fr")
+		self.player3 = User.objects.create(username="salut3", alias="test3", email="test3@42.fr")
+		self.player4 = User.objects.create(username="salut4", alias="test4", email="test4@42.fr")
+		self.player5 = User.objects.create(username="salut5", alias="test5", email="test5@42.fr")
+		self.player6 = User.objects.create(username="salut6", alias="test6", email="test6@42.fr")
+		self.player7 = User.objects.create(username="salut7", alias="test7", email="test7@42.fr")
+		self.player8 = User.objects.create(username="salut8", alias="test8", email="test8@42.fr")
 
 	def test_create_valid(self):
 		# Test tournoi a 4
@@ -146,3 +147,75 @@ class TestTournamentAPI(APITestCase):
 		self.assertEqual(response_bad_id.status_code, 404)
 		response_does_not_exist = self.client.get(self.url_does_not_exist)
 		self.assertEqual(response_does_not_exist.status_code, 404)
+
+
+
+#Test a mettre normalement dans test_views dans authenticate ??
+#Exemple pour tester une vue qui necessite l'authentication
+class MatchHistoryViewTest(APITestCase):
+
+	def setUp(self):
+		self.user = User.objects.create(username='testuser', password='p#ssword123')
+		# self.client.force_authenticate(user=self.user) #Simule l'authentification
+		self.play1 = Play.objects.create(
+			player1=self.user,
+			is_finished=True,
+			date='2024-10-20',
+			results={'winners': [self.user.id], 'losers': ['player2']}
+		)
+		self.play1 = Play.objects.create(
+			player2=self.user,
+			is_finished=True,
+			date='2024-10-21',
+			results={'winners': ['player1'], 'losers': [self.user.id]}
+		)
+		for i in range(10):  # Création de 10 objets
+			Play.objects.create(
+			player1=self.user,
+			is_finished=True,
+			date='2024-10-20',
+			results={'winners': [self.user.id], 'losers': []}
+		)
+		self.play1 = Play.objects.create(
+			player2=self.user,
+			is_finished=False,
+			date='2023-10-20',
+			results={}
+		)
+
+	def test_match_history_authenticated(self):
+		# self.client.login(username='testuser', password='p#ssword123')
+		# self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+		self.client.force_authenticate(user=self.user) #Simule l'authentification
+
+		response = self.client.get(reverse('match-history'))
+		# print(f'response === {response.data}')
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'testuser')
+		self.assertContains(response, '2024-10-20')
+		self.assertContains(response, '2023-10-20')
+		self.assertEqual(response.data['count'], 13)
+		self.assertEqual(len(response.data['results']), 5)
+		self.assertNotEqual(response.data['next'], None)
+		self.assertEqual(response.data['previous'], None)
+
+	def test_match_history_invalid_page(self):
+		self.client.force_authenticate(user=self.user)
+		response_invalid_page = self.client.get(reverse('match-history'), {'page': 999})
+		self.assertEqual(response_invalid_page.status_code, 404)
+
+		response_invalid = self.client.get(reverse('match-history'), {'page': 'TEST INVALID'})
+		self.assertEqual(response_invalid.status_code, 404)
+
+	def test_match_history_authenticated_with_no_plays(self):
+		user_without_plays = User.objects.create(username='testuser1', password='p#ssword1234',email='test2@42.fr')
+		self.client.force_authenticate(user=user_without_plays) #Simule l'authentification
+
+		response = self.client.get(reverse('match-history'))
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.data['count'], 0)
+		self.assertEqual(len(response.data['results']), 0)
+
+	def test_match_history_unauthenticated(self):
+		response = self.client.get(reverse('match-history'))
+		self.assertEqual(response.status_code, 403)

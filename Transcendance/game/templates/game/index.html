@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pong Game</title>
+    <title data-i18n="Jeu de Pong">Jeu de Pong</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
@@ -22,7 +22,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href= "/tournament" class="icon-tournoi">
+                    <a href="/tournament" class="icon-tournoi" id="tournamentLink">
                         <img src="/static/images/podium.png" alt="Icone Tournoi">
                     </a>
                 </li>
@@ -34,7 +34,7 @@
             </div>
         </ul>
         <div class="main-sidebar-left"></div>
-        <button id="logoutButton" class="btn btn-danger logout-button">Déconnexion</button>
+        <button id="logoutButton" class="btn btn-danger logout-button" data-i18n="logout">Déconnexion</button>
         <div id="userInfo" class="user-info"></div>
     </div>
     <div class="language-selector">
@@ -49,25 +49,25 @@
         <fieldset>
             <div class="local-buttons">
                 <input type="radio" name="game_mode" id="local_1v1" value="local_1v1" checked>
-                <label for="local_1v1"><span class="gradient-text">Local 1v1</span></label>
+                <label for="local_1v1"><span class="gradient-text" data-i18n="local_1v1">Local 1v1</span></label>
 
                 <input type="radio" name="game_mode" id="local_2v2" value="local_2v2">
-                <label for="local_2v2"><span class="gradient-text">Local 2v2</span></label>
+                <label for="local_2v2"><span class="gradient-text" data-i18n="local_2v2">Local 2v2</span></label>
             </div>
 
             <div class="row">
                 <input type="radio" name="game_mode" id="remote_1v1" value="remote_1v1">
-                <label for="remote_1v1"><span class="gradient-text">Distant 1v1</span></label>
+                <label for="remote_1v1"><span class="gradient-text" data-i18n="remote_1v1">Distant 1v1</span></label>
             </div>
             <br>
-            <button type="submit" class="play-button"><span class="gradient-text">Jouer</span></button>
+            <button type="submit" class="play-button"><span class="gradient-text" data-i18n="play">Jouer</span></button>
         </fieldset>
     </form>
     <div class="modal" id="gameModal" tabindex="-1" aria-labelledby="gameModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="gameModalLabel">Pong Game</h5>
+                    <h5 class="modal-title" id="gameModalLabel" data-i18n="PONG">Jeu de Pong</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -76,23 +76,23 @@
             </div>
         </div>
     </div>
-    <button class="auth-button" data-bs-toggle="modal" data-bs-target="#authModal">
+    <button class="auth-button" data-bs-toggle="modal" data-bs-target="#authModal" data-i18n="authButton">
         S'inscrire/Connexion
     </button>
     <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="authModalLabel">Authentification</h5>
+                    <h5 class="modal-title" id="authModalLabel" data-i18n="authModalTitle">Authentification</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <ul class="nav nav-tabs" id="authTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button" role="tab" aria-controls="login" aria-selected="true">Connexion</button>
+                            <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button" role="tab" aria-controls="login" aria-selected="true" data-i18n="loginTab">Connexion</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="signup-tab" data-bs-toggle="tab" data-bs-target="#signup" type="button" role="tab" aria-controls="signup" aria-selected="false">Inscription</button>
+                            <button class="nav-link" id="signup-tab" data-bs-toggle="tab" data-bs-target="#signup" type="button" role="tab" aria-controls="signup" aria-selected="false" data-i18n="signupTab">Inscription</button>
                         </li>
                     </ul>
                     <div class="tab-content" id="authTabsContent">
@@ -100,40 +100,40 @@
                             <form id="loginForm" class="mt-3">
                                 {% csrf_token %}
                                 <div class="mb-3">
-                                    <p for="loginUsername" class="form-label">Nom d'utilisateur</p>
+                                    <p for="loginUsername" class="form-label" data-i18n="username">Nom d'utilisateur</p>
                                     <input type="text" class="form-control" id="loginUsername" name="username" required>
                                 </div>
                                 <div class="mb-3">
-                                    <p for="loginPassword" class="form-label">Mot de passe</p>
+                                    <p for="loginPassword" class="form-label" data-i18n="password">Mot de passe</p>
                                     <input type="password" class="form-control" id="loginPassword" name="password" required>
                                 </div>
-                                <button type="submit" class="btn btn-primary">Se connecter</button>
+                                <button type="submit" class="btn btn-primary" data-i18n="loginButton">Se connecter</button>
                             </form>
                         </div>
                         <div class="tab-pane fade" id="signup" role="tabpanel" aria-labelledby="signup-tab">
                             <form id="signupForm" class="mt-3" method="POST" enctype="multipart/form-data">
                                 {% csrf_token %}
                                 <div class="mb-3">
-                                    <p for="signupUsername" class="form-label">Nom d'utilisateur</p>
+                                    <p for="signupUsername" class="form-label" data-i18n="username">Nom d'utilisateur</p>
                                     <input type="text" class="form-control" id="signupUsername" name="username" required>
                                 </div>
                                 <div class="mb-3">
-                                    <p for="signupAlias" class="form-label">Alias</p>
+                                    <p for="signupAlias" class="form-label" data-i18n="alias">Alias</p>
                                     <input type="text" class="form-control" id="signupAlias" name="alias" required>
                                 </div>
                                 <div class="mb-3">
-                                    <p for="signupEmail" class="form-label">Email</p>
+                                    <p for="signupEmail" class="form-label" data-i18n="email">Email</p>
                                     <input type="email" class="form-control" id="signupEmail" name="email" required>
                                 </div>
                                 <div class="mb-3">
-                                    <p for="signupPassword" class="form-label">Mot de passe</p>
+                                    <p for="signupPassword" class="form-label" data-i18n="password">Mot de passe</p>
                                     <input type="password" class="form-control" id="signupPassword" name="password" required>
                                 </div>
                                 <div class="mb-3">
-                                    <p for="profilePhoto" class="form-label">Photo de profil</p>
+                                    <p for="profilePhoto" class="form-label" data-i18n="profilePhoto">Photo de profil</p>
                                     <input type="file" class="form-control" id="profilePhoto" name="photoProfile">
                                 </div>
-                                <button type="submit" class="btn btn-success">S'inscrire</button>
+                                <button type="submit" class="btn btn-success" data-i18n="signupButton">S'inscrire</button>
                             </form>
                         </div>
                     </div>
@@ -145,34 +145,36 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="friendModalLabel">Gestion des amis</h5>
+                    <h5 class="modal-title" id="friendModalLabel" data-i18n="friendModalTitle">Gestion des amis</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <ul class="nav nav-tabs" id="friendTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="friend-list-tab" data-bs-toggle="tab" data-bs-target="#friend-list" type="button" role="tab" aria-controls="friend-list" aria-selected="true">Liste d'amis</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="add-friend-tab" data-bs-toggle="tab" data-bs-target="#add-friend" type="button" role="tab" aria-controls="add-friend" aria-selected="false">Ajouter un ami</button>
-                        </li>
-                    </ul>
-                    <div class="tab-content" id="friendTabsContent">
+                    <div class="custom-tabs-container">
+                        <ul class="nav nav-pills nav-fill" id="friendTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active custom-tab-button" id="friend-list-tab" data-bs-toggle="pill" data-bs-target="#friend-list" type="button" role="tab" aria-controls="friend-list" aria-selected="true" data-i18n="friendListTab">Liste d'amis</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link custom-tab-button" id="add-friend-tab" data-bs-toggle="pill" data-bs-target="#add-friend" type="button" role="tab" aria-controls="add-friend" aria-selected="false" data-i18n="addFriendTab">Ajouter un ami</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="tab-content custom-tab-content" id="friendTabsContent">
                         <div class="tab-pane fade show active" id="friend-list" role="tabpanel" aria-labelledby="friend-list-tab">
-                            <h6 class="mt-3">Vos abonnements</h6>
-                            <ul id="followingList" class="list-group">
+                            <h6 class="friend-list-title" data-i18n="yourFollowing">Vos abonnements</h6>
+                            <ul id="followingList" class="list-group custom-list-group">
                             </ul>
-                            <h6 class="mt-3">Vos abonnés</h6>
-                            <ul id="followersList" class="list-group">
+                            <h6 class="friend-list-title" data-i18n="yourFollowers">Vos abonnés</h6>
+                            <ul id="followersList" class="list-group custom-list-group">
                             </ul>
                         </div>
                         <div class="tab-pane fade" id="add-friend" role="tabpanel" aria-labelledby="add-friend-tab">
                             <form id="addFriendForm" class="mt-3">
                                 <div class="mb-3">
-                                    <p for="friendUsername" class="form-label">Nom d'utilisateur de l'ami</p>
-                                    <input type="text" class="form-control" id="friendUsername" required>
+                                    <p for="friendUsername" class="form-label" data-i18n="addFriendUsername">Nom d'utilisateur de l'ami</p>
+                                    <input type="text" class="form-control custom-input" id="friendUsername" required>
                                 </div>
-                                <button type="submit" class="btn btn-primary">Ajouter</button>
+                                <button type="submit" class="btn btn-primary custom-btn" data-i18n="addFriendButton">Ajouter</button>
                             </form>
                         </div>
                     </div>
@@ -184,23 +186,48 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="friendProfileModalLabel">Profil de l'ami</h5>
+                    <h5 class="modal-title" id="friendProfileModalLabel" data-i18n="friendProfileTitle">Profil de l'ami</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="friendProfileContent">
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" id="unfollowButton">Se désabonner</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                    <button type="button" class="btn btn-danger" id="unfollowButton" data-i18n="unfollowButton">Se désabonner</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="closeButton">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="tournamentModal" tabindex="-1" aria-labelledby="tournamentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tournamentModalLabel" data-i18n="tournamentModalTitle">Créer un tournoi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="tournamentForm">
+                        <div class="mb-3">
+                            <p for="playerCount" class="form-label" data-i18n="playerCount">Nombre de joueurs</p>
+                            <select class="form-select" id="playerCount" required>
+                                <option value="4">4 joueurs</option>
+                                <option value="8">8 joueurs</option>
+                            </select>
+                        </div>
+                        <div id="aliasInputs">
+                        </div>
+                        <button type="submit" class="btn btn-primary" data-i18n="createTournament">Créer le tournoi</button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/static/js/language.js"></script>
     <script src="/static/js/csrf_utils.js"></script>
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/friends.js"></script>
     <script src="/static/js/main.js"></script>
+    <script src="/static/js/language.js"></script>
+    <script src="/static/js/tournament.js"></script>
 </body>
 </html>

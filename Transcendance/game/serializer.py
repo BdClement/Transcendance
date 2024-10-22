@@ -51,31 +51,19 @@ class PlayDetailSerializer(serializers.ModelSerializer):
 				transformed_results[key] = value
 		return transformed_results
 
-# A faire dans le front
-# Interface de Match History :
-	#Tournoi + interface pour continuer un tournoi = OK
-	#stat win and losses grace a l'api GET sur les users nb_parties jouees, nombre de victoires, nombre de defaites voir plus = OK
-	#USer can update their information = OK
-
-	#User can view their online status (a voir avec ilo)
-	#History User 1v1 avec date, results, play_in_tournament
-
-
-
-
-
 
 #La methode create d'un serializer est differente de la methode create d'un ViewSet
 #Cette methode peut etre surchargee pour personnaliser la maniere dont un objet est cree a partir de donnees validees
 #Ici, cela permet de valider alias_name pour s'en servir sans creer l'objet avec le field alias_names
 #Tandis que la methode create du ViewSet gere la loqique HTTP (valider la requete, appel du serializer, envoi de reponses HTTP)
 class TournamentSerializer(serializers.ModelSerializer):
-	#Personnalisation des fields pour leur usages respectifs
-	#Alias_name uniquement pour la validation
+
+	results = serializers.SerializerMethodField()#Personnalisation de la sortie de result
+
 	alias_names = serializers.ListField(child=serializers.CharField(), write_only=True, required=True)
 	nb_players = serializers.ChoiceField(choices=[ (4, 'Quatre joueurs'), (8, 'Huit joueurs')], required=True)
 	is_finished = serializers.BooleanField(read_only=True)
-	results = serializers.JSONField(read_only=True)
+	# results = serializers.JSONField(read_only=True)
 	id = serializers.IntegerField(read_only=True)
 
 	class Meta:
@@ -98,11 +86,6 @@ class TournamentSerializer(serializers.ModelSerializer):
 		#Verifier que chaque alias n'est present qu'une fois sauf si dans Player on interdit les alias deja utilises
 		return data
 
-		#Recuperer tout les players correspondant aux alias_name recus
-		#Verifier que tout les alias_names correspondent a un Player
-		#ajouter les players au contexte de creation (data['players'])
-		#return data
-
 	def create(self, validated_data):
 		#Retire les alias_names de validated_data car ils ne sont pas present dans l'objet Tournament
 		alias_names = validated_data.pop('alias_names', [])
@@ -114,4 +97,29 @@ class TournamentSerializer(serializers.ModelSerializer):
 		tournament.players.set(players)
 		tournament.create_next_round()
 		return tournament
+
+	# Methode responsable de transformer les id stocker dans la base de donnee en alias pour les clients
+	def get_results(self, obj):
+		results = obj.results
+		if results is None:
+			return {}
+
+		transformed_results = {}
+
+		for key, value in results.items(): #iteration sur chaque element du dictionnaire results
+			if isinstance(value, list):#Si l'element de results est une list (donc winners ou losers)
+				transformed_players = []#stcoker les nouveau noms
+				for item in value:#iteration sur chaque element d'un field de results
+					if isinstance(item, int): #Si l'element est un ID
+						player = User.objects.get(pk=item)
+						if player:
+							transformed_players.append(player.alias)
+						else:
+							transformed_players.append(f'Unknown Player {item}')
+					elif isinstance(item, str):#Si c'est un joueur inconnu on modifie rien
+						transformed_players.append(item)
+				transformed_results[key] = transformed_players
+			else:
+				transformed_results[key] = value
+		return transformed_results
 

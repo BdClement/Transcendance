@@ -32,6 +32,8 @@ def get_csrf_token(request):
 
 #APIView pour des actions specifiques
 #ModelViewset pour les operations CRUD directement liee a un model
+
+#Ajoute par Julien ???
 class UserInfoAPI(APIView):
 	def get(self, request):
 		if request.user.is_authenticated:
@@ -103,6 +105,7 @@ class Logout(APIView):
 		logout(request)
 		return Response({"message": "Déconnexion réussie"}, status.HTTP_200_OK)
 
+#Ajoute par Julien ???
 class UserDetailView(APIView):
     def get(self, request, username):
         user = get_object_or_404(User, username=username)
@@ -124,7 +127,7 @@ class UserProfileView(APIView):
 			serializer = PublicUserSerializer(user)
 		return Response(serializer.data)
 
-#Classe ajoute par Clement pour faire le MatchHistory
+#ajoute par Clement pour faire le MatchHistory
 	#ListAPIView gere les requetes de type List et Pagination
 class MatchHistoryView(generics.ListAPIView):
 
@@ -133,6 +136,7 @@ class MatchHistoryView(generics.ListAPIView):
 	#pagination_class = #Specifier dans les settings par defaut mais personnalisable comme ceci
 	#Cette methode specifie comment recuperer les donnees
 	#Une fois fait, DRF utilisera serializer_class pour serialiser les donnees recuperees
+
 	def get_queryset(self):
 		#Cas si on autorise de consulter le Match History d'autres joueurs (Mettre condition d'ami)
 		# user_id = self.kwargs.get('user_id', None)
@@ -204,5 +208,4 @@ class FollowersListView(APIView):
 		followers_users = request.user.followers.all()
 		followers_data = [{"id": user.id, "username": user.username} for user in followers_users]
 		return Response(followers_data, status=status.HTTP_200_OK)
-
 

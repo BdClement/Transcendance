@@ -34,19 +34,17 @@ urlpatterns = [
 	path('api/play/detail/<play_id>', views.PlayDetailAPIView.as_view(), name='play_detail'),
 	path('api/play/join/<play_id>', views.PlaySubscribeAPIView.as_view(), name="play_join"),
 	path('api/', include(router.urls)),
-	# path('api/play/create', views.PlayCreateAPIView.as_view(), name='play_create'),
-    # path('api/play/detail/<play_id>', views.PlayDetailAPIView.as_view(), name='play_detail'),
 	path('api/user/match-history/', MatchHistoryView.as_view(), name='match-history'),
 	# path('users/<int:user_id>/match-history/', MatchHistoryView.as_view(), name='match-history'),#MatchHistory dautre joueurs (amis)??
     path('api/login/', LoginAPI.as_view(), name='login'),
     path('api/signup/', SignupAPI.as_view(), name='signup'),
     path('api/logout/', Logout.as_view(), name='logout'),
-    path('api/user/', UserInfoAPI.as_view(), name='user-info'),
+    path('api/user/', UserInfoAPI.as_view(), name='user-info'),#TBD ?
     path('api/userprofile/<int:user_id>/', UserProfileView.as_view(), name='userprofile'),
     path('api/userprofileupdate/', UserProfileUpdateView.as_view(), name='userprofileupdate'),
     path('api/userdelete/', UserDeleteView.as_view(), name='userdelete'),
     path('api/addfriend/<int:user_id>/', AddFriendView.as_view()),
-    path('api/users/<str:username>/', UserDetailView.as_view(), name='user-detail'),
+    path('api/users/<str:username>/', UserDetailView.as_view(), name='user-detail'),#TBD ?
     path('api/suppfriend/<int:user_id>/', SuppFriendView.as_view()),
     path('api/following/', FollowingListView.as_view()),
     path('api/followers/', FollowersListView.as_view()),

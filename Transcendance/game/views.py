@@ -51,9 +51,7 @@ class PlayDetailAPIView(APIView):
 			return Response({'error': 'url required play_id'}, status=status.HTTP_400_BAD_REQUEST)
 		except Exception as e:
 			return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-		# play.refresh_from_db()
 		serializer = PlayDetailSerializer(play)
-		play2 = Play.objects.get(pk=play_id)
 		return Response(serializer.data, status=status.HTTP_200_OK)
 
 #Cet API permet de relier un User dans l'objet Partie. Il doit etre utilise en ce sens
@@ -84,9 +82,6 @@ class TournamentViewSet(viewsets.ModelViewSet):
 	queryset = Tournament.objects.all()
 	serializer_class = TournamentSerializer
 
-	def list(self, request, *args, **kwargs):
-		raise MethodNotAllowed('GET')
-
 	def update(self, request, *args, **kwargs):
 		raise MethodNotAllowed('PUT')
 
@@ -95,14 +90,6 @@ class TournamentViewSet(viewsets.ModelViewSet):
 
 	def destroy(self, request, *args, **kwargs):
 		raise MethodNotAllowed('DELETE')
-
-	#Surcharge pour personnalisees les comportement sinon gerees par defaut par le viewset
-	# def retrieve(self, request, *args, **kwargs):
-	# 	return super().retrieve(request, *args, **kwargs)
-
-	#Surcharge de create car j'utilise alias_names dans la logique metier et que ce field ne fait pas partie du model Tournament
-	# def create(self, request, *args, **kwargs):
-	# 	return super().create(request, *args, **kwargs)
 
 	#Decorateur permettant une action personnalisee dans un ViewSet
 	#detail = S'applique a un objet en particulier

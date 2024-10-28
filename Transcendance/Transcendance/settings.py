@@ -12,12 +12,6 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
-# from dotenv import load_dotenv
-
-# load_dotenv()#Charge les variables d'environnement
-
-# SSL_CERT_PATH = os.getenv('SSL_CERT_PATH')
-# SSL_KEY_PATH = os.getenv('SSL_KEY_PATH')
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.

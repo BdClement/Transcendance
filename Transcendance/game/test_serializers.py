@@ -68,7 +68,7 @@ class TestTournamentSerializer(APITestCase):
 
 	def test_serialiazer_data(self):
 		serializer = TournamentSerializer(self.tournament)
-		self.assertEqual(serializer.data, {'id': 1, 'nb_players': 4, 'is_finished': False, 'results':  None})
+		self.assertEqual(serializer.data, {'id': 1, 'nb_players': 4, 'is_finished': False, 'results': {}})
 
 	def test_deserialization_valid_data(self):
 		#Field requis

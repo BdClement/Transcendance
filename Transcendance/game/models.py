@@ -1,15 +1,18 @@
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
+from django.conf import settings
 import json
+import threading
+from asgiref.sync import async_to_sync
 from django.db import models
 from channels.db import database_sync_to_async
 from authentication.models import User
-from web3 import Web3, AsyncWeb3, AsyncHTTPProvider
+from web3 import Web3, AsyncWeb3, AsyncHTTPProvider, exceptions
 
-load_dotenv()#A Faire dans settings plutot pour rendre cela disponible dans tout le projet
-PRIVATE_KEY = os.getenv("PRIVATE_KEY")
-CONTRACT_ADDRESS = os.getenv("CONTRACT_ADDRESS")
-BLOCKCHAIN_NETWORK = os.getenv("BLOCKCHAIN_NETWORK")
+# load_dotenv()#A Faire dans settings plutot pour rendre cela disponible dans tout le projet
+# PRIVATE_KEY = os.getenv("PRIVATE_KEY")
+# CONTRACT_ADDRESS = os.getenv("CONTRACT_ADDRESS")
+# BLOCKCHAIN_NETWORK = os.getenv("BLOCKCHAIN_NETWORK")
 # CONTRACT_ABI = os.getenv("CONTRACT_ABI")
 
 # Create your models here.
@@ -113,8 +116,11 @@ class Tournament(models.Model):
 					"final_score": final_play.results.get('score', {})
 				}
 				self.is_finished = True
+				#Lancement dans un thread separe car pas de boucle d'evenement ici puisque contexte syncrhone (asyncio.create_task impossible)
+				threading.Thread(target=async_to_sync(self.store_score_on_blockchain)).start()
 				#Stockage BLOCKCHAIN
-				self.store_score_on_blockchain()
+				# asyncio.create_task(self.store_score_on_blockchain())#A voir si je dois pas save ici
+				# self.store_score_on_blockchain()
 			else :#Creation de toutes les parties du prochain round
 				winners = []
 				for play in plays_from_last_round:
@@ -166,88 +172,108 @@ class Tournament(models.Model):
 
 	#Stockage Blockchain (Essayer d'abord dans une console)
 	async def store_score_on_blockchain(self):
-		#Isolattion des arguments a passe au contrat a la foncton storeScore
-		# players = tournament.results.get('players', [])
-		# winner = tournament.results.get('winner', [])
-		# score = tournament.results.get('final_score', '')
-		players = self.results.get('players', [])
-		winner = self.results.get('winner', [])
-		score = self.results.get('final_score', '')
+		try :
+			#Isolattion des arguments a passe au contrat a la foncton storeScore
+			# players = tournament.results.get('players', [])
+			# winner = tournament.results.get('winner', [])
+			# score = tournament.results.get('final_score', '')
+			players = self.results.get('players', [])
+			winner = self.results.get('winner', [])
+			score = self.results.get('final_score', '')
 
-		#Connexion au noeud blockchain
-		#Utilisation plutot de AsyncWeb3.AsyncHTTPProvider plutot pour ne pas bloquer le serveur
-		#Et de
-		# w3 = Web3(Web3.HTTPProvider(BLOCKCHAIN_NETWORK))
-		w3 = AsyncWeb3(AsyncHTTPProvider(BLOCKCHAIN_NETWORK))
-		if await w3.is_connected():
-			print("La connexion au Provider Blockchain a reussie")
-		else :
-			print("La connexion au Provider Blockchain a echouee")
-			return
+			#Connexion au noeud blockchain
+			#Utilisation plutot de AsyncWeb3.AsyncHTTPProvider plutot pour ne pas bloquer le serveur
+			#Et de
+			# w3 = Web3(Web3.HTTPProvider(BLOCKCHAIN_NETWORK))
+			w3 = AsyncWeb3(AsyncHTTPProvider(settings.ALCHEMY_RPC))
+			if await w3.is_connected():
+				print("La connexion au Provider Blockchain a reussie")
+			else :
+				print("La connexion au Provider Blockchain a echouee")
+				return
 
-		#Test de la cle privee
-		if PRIVATE_KEY is None:
-			print("You must set PRIVATE_KEY environment variable")
-			return
-		if  not PRIVATE_KEY.startswith("0x"):
-			print("Private key must start with 0x hex prefix")
-			return
+			#Test de la cle privee
+			if settings.PRIVATE_KEY is None:
+				print("You must set PRIVATE_KEY environment variable")
+				return
+			if  not settings.PRIVATE_KEY.startswith("0x"):
+				print("Private key must start with 0x hex prefix")
+				return
 
-		# 	w3.eth.get_block('latest') #OTHER
+			#Accession a l'abi depuis un fichier
+			with open('../TournamentStoreABI.json', 'r') as file:
+				contract_data = json.load(file)
+			contract_ABI = contract_data.get("abi")
+			print(f'\n\n{contract_ABI}\n\n')
 
-		#Accession a l'abi depuis un fichier
-		with open('../TournamentStoreABI.json', 'r') as file:
-			contract_data = json.load(file)
-		contract_ABI = contract_data.get("abi")
+			#Accession au contrat sur le reseau blockchain
+			print('\nTEST avant deployed_contract')
+			deployed_contract = w3.eth.contract(address=settings.CONTRACT_ADDRESS,abi=contract_ABI)
+			#set nonce (Entier unique pour chaque transaction envoyee depuis une address Ethereum pour garantir l'ordre des transactions)
+			print('\nTEST avant nonce')
+			nonce = await w3.eth.get_transaction_count(settings.PUBLIC_KEY)
+			#estimation de gas en fonction du reseau
+			# gas = w3.eth.estimate_gas(tx)
+			print('\nTEST avant gas')
+			gas = await w3.eth.estimate_gas({
+				"from": settings.PUBLIC_KEY,
+				"to": settings.CONTRACT_ADDRESS,
+				"data": deployed_contract.encode_abi(
+					abi_element_identifier="storeScore",
+					args=[self.id, players, winner, score]
+				),
+			})
+			#estimation du gas_price
+			print('\nTEST avant gas_price')
+			gas_price = await w3.eth.gas_price
+			#Build transaction
+			print('\nTEST avant tx')
+			tx = await deployed_contract.functions.storeScore(self.id, players, winner, score).build_transaction({
+				#to : l'adresse du contrat (deja set via deployed_contract)
+				"from": settings.PUBLIC_KEY,
+				"nonce": nonce,
+				#gas: Limite de gas maximale que la transaction peut consommer
+				"gas": gas,
+				#gasPrice: Le prix que l'emetteur est pret a payer pour une unite de gas (par defaut le prix du gas recommande par le reseau)
+				"gasPrice": gas_price
+				#value: Montant en wei envoyer dans la transaciton (function payable, par defaut 0)
+				#data: donnee envoye (ici les arguments deja envoyes par la fonciton a partir de laquelle j'appelle build_transaction)
+			})
 
-		#Accession au contrat sur le reseau blockchain
-		deployed_contract = w3.eth.contract(address=CONTRACT_ADDRESS,abi=contract_ABI)
-		#set nonce (Entier unique pour chaque transaction envoyee depuis une address Ethereum pour garantir l'ordre des transactions)
-		nonce = await w3.eth.get_transaction_count("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")
-		#estimation de gas en focntion du reseau
-		# gas = w3.eth.estimate_gas(tx)
-		gas = await w3.eth.estimate_gas({
-			"from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-			"to": CONTRACT_ADDRESS,
-			"data": deployed_contract.encode_abi(
-				abi_eleement_identifier="storeScore",
-				args=[self.id, players, winner, score]
-			),
-		})
-		#estimation du gas_price
-		gas_price = await w3.eth.gas_price
-		#Build transaction
-		tx = deployed_contract.functions.storeScore(self.id, players, winner, score).build_transaction({
-			#to : l'adresse du contrat (deja set via deployed_contract)
-			"from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-			"nonce": nonce,
-			#gas: Limite de gas maximale que la transaction peut consommer
-			"gas": gas,
-			#gasPrice: Le prix que l'emetteur est pret a payer pour une unite de gas (par defaut le prix du gas recommande par le reseau)
-			"gasPrice": gas_price
-			#value: Montant en wei envoyer dans la transaciton (function payable, par defaut 0)
-			#data: donnee envoye (ici les arguments deja envoyes par la fonciton a partir de laquelle j'appelle build_transaction)
-		})
+			print('\nTEST avant signed_tx')
+			print(f'\nTX == {tx}')
+			signed_tx = w3.eth.account.sign_transaction(tx, private_key=settings.PRIVATE_KEY)
+			print('\nTEST avant tx_hash')
+			tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+			#Utilise pour attendre la confirmation de la transaciton sur la blockchain [Synchrone a voir dans contexte ASYNCHRONE !]
+			tx_receipt = await w3.eth.wait_for_transaction_receipt(tx_hash)
 
-		signed_tx = w3.eth.account.sign_transaction(tx, private_key=PRIVATE_KEY)
-		tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-		#Utilise pour attendre la confirmation de la transaciton sur la blockchain [Synchrone a voir dans contexte ASYNCHRONE !]
-		tx_receipt = await w3.eth.wait_for_transaction_receipt(tx_hash)
+			#Appel de fonction depuis le contrat, 2 possibilites :
+				#Fonction view qui ne modifie pas l'etat de la blockchain peut etre appeler avec call()
+			# 	owner = deployed_contract.functions.getOwner().call()
+			# 	print(f'Le owner du contrat est {owner} dapres le contrat')
+				#Fonction qui modifie l'etat de la blockchain :
+					#Utilisation de transact (de Web.py) qui cree par defaut la transaction et la signe automatiquement (sur un reseau local)
 
-		#Appel de fonction depuis le contrat, 2 possibilites :
-			#Fonction view qui ne modifie pas l'etat de la blockchain peut etre appeler avec call()
-		# 	owner = deployed_contract.functions.getOwner().call()
-		# 	print(f'Le owner du contrat est {owner} dapres le contrat')
-			#Fonction qui modifie l'etat de la blockchain :
-				#Utilisation de transact (de Web.py) qui cree par defaut la transaction et la signe automatiquement (sur un reseau local)
-
-				#Preparation manuelle de la transaction avec buildTransaction en specifiant tout les parametres de la tx
-				#Signature de la transaction avec la cle privee
-				#Envoi de la tx signee sur le reseau blockchain
+					#Preparation manuelle de la transaction avec buildTransaction en specifiant tout les parametres de la tx
+					#Signature de la transaction avec la cle privee
+					#Envoi de la tx signee sur le reseau blockchain
 
 
-		#Preparation par default pour plus de simplicite pour des contrats simple
-		#Preparation manuelle de la transaciton pour plus de controle sur la transaction, pour des contrats complexes et des transacitons a signer
+			#Preparation par default pour plus de simplicite pour des contrats simple
+			#Preparation manuelle de la transaciton pour plus de controle sur la transaction, pour des contrats complexes et des transacitons a signer
+		except exceptions.Web3ValueError as e:
+			print(f'Mauvaise donnees transmises au smart contract : {e}')
+		except exceptions.ContractLogicError:
+			print(f'L interraction ne respecte pas les regles imposees par le smart contract : {e}')
+		except exceptions.BadFunctionCallOutput as e:
+			print(f'Erreur de retour du smart contract : {e}')
+		except exceptions.TransactionNotFound as e:
+			print(f'La transaction attendu n existe pas sur la Blockchain : {e}')
+		except exceptions.InvalidAddress as e:
+			print(f'L adresse utilisee est invalide : {e}')
+		except Exception as e:
+			print(f'Une erreur est survenue lors du stockage du score sur la blockchain: {e}')
 
 
 #Gestion des excepitons du au contrat (try and catch avec gestion d'erreur propre)

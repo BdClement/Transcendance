@@ -12,6 +12,14 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+PUBLIC_KEY = os.getenv("PUBLIC_KEY")
+PRIVATE_KEY = os.getenv("PRIVATE_KEY")
+CONTRACT_ADDRESS = os.getenv("CONTRACT_ADDRESS")
+BLOCKCHAIN_NETWORK = os.getenv("BLOCKCHAIN_NETWORK")#Obsolete
+ALCHEMY_RPC = os.getenv("ALCHEMY_RPC")
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
